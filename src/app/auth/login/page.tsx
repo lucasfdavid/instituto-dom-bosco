@@ -17,7 +17,8 @@ export default function LoginPage() {
     setError('')
 
     const supabase = createClient()
-    const { error: authError } = await supabase.auth.signInWithPassword({ email, password })
+    const { data, error: authError } = await supabase.auth.signInWithPassword({ email, password })
+    console.log('Login result:', data, authError)
 
     if (authError) {
       setError('E-mail ou senha inválidos.')
