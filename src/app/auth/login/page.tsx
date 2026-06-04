@@ -25,8 +25,7 @@ export default function LoginPage() {
       return
     }
 
-    router.refresh()
-    setTimeout(() => router.push('/'), 500)
+  window.location.href = '/'
   }
 
   return (
