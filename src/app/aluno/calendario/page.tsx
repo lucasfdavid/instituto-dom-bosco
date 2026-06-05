@@ -72,7 +72,7 @@ export default function AlunoCalendario() {
   return (
     <div className="p-6 max-w-5xl">
       <div className="mb-6">
-        <h1 className="font-serif text-3xl font-bold text-navy">Calendário</h1>
+        <h2 className="font-serif text-base font-semibold text-navy capitalize whitespace-nowrap">
       </div>
 
       <div className="grid md:grid-cols-3 gap-4">
