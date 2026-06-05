@@ -3,8 +3,7 @@
 import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
-import { Topbar } from '@/components/ui/Topbar'
-import { hoje, formatarDataCurta } from '@/lib/utils'
+import { hoje } from '@/lib/utils'
 import { CheckCircle2, RotateCcw } from 'lucide-react'
 import {
   format, startOfMonth, endOfMonth, eachDayOfInterval,
@@ -25,13 +24,11 @@ export default function AlunoCalendario() {
     const supabase = createClient()
     const { data: { session } } = await supabase.auth.getSession()
     if (!session) { router.push('/auth/login'); return }
-
     const { data } = await supabase
       .from('revisoes')
       .select('*, conteudo:conteudos(*)')
       .eq('aluno_id', session.user.id)
       .order('data_revisao')
-
     setRevisoes(data ?? [])
     setLoading(false)
   }
@@ -46,8 +43,7 @@ export default function AlunoCalendario() {
 
   async function remarcar(id: string) {
     const supabase = createClient()
-    const novaData = format(new Date(), 'yyyy-MM-dd')
-    await supabase.from('revisoes').update({ status: 'rescheduled', data_revisao: novaData }).eq('id', id)
+    await supabase.from('revisoes').update({ status: 'rescheduled', data_revisao: format(new Date(), 'yyyy-MM-dd') }).eq('id', id)
     loadData()
   }
 
@@ -60,7 +56,7 @@ export default function AlunoCalendario() {
   const start = startOfMonth(current)
   const end = endOfMonth(current)
   const days = eachDayOfInterval({ start, end })
-  const offset = (getDay(start) + 6) % 7 // Começa na segunda
+  const offset = (getDay(start) + 6) % 7
 
   function revisoesNoDia(date: Date) {
     return revisoes.filter(r => isSameDay(parseISO(r.data_revisao), date))
@@ -68,46 +64,28 @@ export default function AlunoCalendario() {
 
   const revisoesSelected = revisoesNoDia(selectedDate)
   const selectedLabel = format(selectedDate, "dd 'de' MMMM", { locale: ptBR })
+  const mesAno = format(current, 'MMMM yyyy', { locale: ptBR })
 
   return (
     <div className="p-6 max-w-5xl">
       <div className="mb-6">
-        <h2 className="font-serif text-sm font-semibold text-navy capitalize whitespace-nowrap">Calendário</h2>
-
+        <h1 className="font-serif text-3xl font-bold text-navy">Calendário</h1>
+      </div>
       <div className="grid md:grid-cols-3 gap-4">
-        {/* Calendário */}
         <div className="md:col-span-2 bg-white rounded-2xl p-5 border border-gray-200 shadow-sm">
-          {/* Header */}
           <div className="flex items-center justify-between mb-4">
-            <button
-              onClick={() => setCurrent(subMonths(current, 1))}
-              className="w-8 h-8 flex items-center justify-center rounded-lg border border-gray-200 text-navy hover:bg-gray-50"
-            >←</button>
+            <button onClick={() => setCurrent(subMonths(current, 1))} className="w-8 h-8 flex items-center justify-center rounded-lg border border-gray-200 text-navy hover:bg-gray-50">←</button>
             <div className="flex items-center gap-3">
-              <h2 className="font-serif text-lg font-semibold text-navy capitalize">
-                {format(current, 'MMMM yyyy', { locale: ptBR })}
-              </h2>
-              <button
-                onClick={() => { setCurrent(new Date()); setSelectedDate(new Date()) }}
-                className="text-xs font-semibold px-3 py-1 rounded-lg bg-gradient-to-r from-navy to-teal text-white"
-              >
-                Hoje
-              </button>
+              <h2 className="font-serif text-base font-semibold text-navy capitalize">{mesAno}</h2>
+              <button onClick={() => { setCurrent(new Date()); setSelectedDate(new Date()) }} className="text-xs font-semibold px-3 py-1 rounded-lg bg-gradient-to-r from-navy to-teal text-white">Hoje</button>
             </div>
-            <button
-              onClick={() => setCurrent(addMonths(current, 1))}
-              className="w-8 h-8 flex items-center justify-center rounded-lg border border-gray-200 text-navy hover:bg-gray-50"
-            >→</button>
+            <button onClick={() => setCurrent(addMonths(current, 1))} className="w-8 h-8 flex items-center justify-center rounded-lg border border-gray-200 text-navy hover:bg-gray-50">→</button>
           </div>
-
-          {/* Dias da semana */}
           <div className="grid grid-cols-7 mb-1">
             {DOW.map(d => (
               <div key={d} className="text-center font-condensed text-[11px] uppercase tracking-wide text-gray-400 py-1">{d}</div>
             ))}
           </div>
-
-          {/* Grid */}
           <div className="grid grid-cols-7 gap-1">
             {Array.from({ length: offset }).map((_, i) => <div key={`e${i}`} />)}
             {days.map(date => {
@@ -118,16 +96,15 @@ export default function AlunoCalendario() {
                 <button
                   key={date.toISOString()}
                   onClick={() => setSelectedDate(date)}
-                  className={`aspect-square flex flex-col items-center justify-center rounded-xl text-sm relative transition-all
-                    ${isSelected ? 'bg-gradient-to-br from-navy to-teal text-white shadow-md' :
-                      isHoje ? 'bg-navy text-white' :
-                      'hover:bg-gray-50 text-navy'}`}
+                  className={`aspect-square flex flex-col items-center justify-center rounded-xl text-sm transition-all ${
+                    isSelected ? 'bg-gradient-to-br from-navy to-teal text-white shadow-md' :
+                    isHoje ? 'bg-navy text-white' :
+                    'hover:bg-gray-50 text-navy'
+                  }`}
                 >
-                  {format(date, 'd')}
+                  <span>{format(date, 'd')}</span>
                   {revs.length > 0 && (
-                    <span className={`text-[9px] font-bold mt-0.5 px-1.5 rounded-full ${
-                      isSelected ? 'bg-white/30 text-white' : 'bg-teal/20 text-teal'
-                    }`}>
+                    <span className={`text-[9px] font-bold px-1.5 rounded-full ${isSelected ? 'bg-white/30 text-white' : 'bg-teal/20 text-teal'}`}>
                       {revs.length}R
                     </span>
                   )}
@@ -136,12 +113,9 @@ export default function AlunoCalendario() {
             })}
           </div>
         </div>
-
-        {/* Painel lateral */}
         <div className="bg-white rounded-2xl p-5 border border-gray-200 shadow-sm">
           <h3 className="font-serif text-base font-semibold text-navy mb-1 capitalize">{selectedLabel}</h3>
           <p className="font-condensed text-[10px] uppercase tracking-widest text-gray-400 mb-4">Revisões</p>
-
           {revisoesSelected.length === 0 ? (
             <p className="text-sm text-gray-400">Nenhuma revisão prevista.</p>
           ) : (
@@ -150,24 +124,17 @@ export default function AlunoCalendario() {
                 <div key={r.id} className={`p-3 rounded-xl border ${r.status === 'completed' ? 'border-teal/20 bg-teal-light' : 'border-gray-200 bg-gray-50'}`}>
                   <p className="font-semibold text-navy text-sm mb-0.5">{r.conteudo?.assunto}</p>
                   <p className="text-xs text-gray-400 mb-2">{r.conteudo?.materia} · {r.tipo}</p>
-                  {r.status !== 'completed' && (
+                  {r.status !== 'completed' ? (
                     <div className="flex gap-1.5 flex-wrap">
-                      <button
-                        onClick={() => marcarConcluida(r.id)}
-                        className="flex items-center gap-1 px-2.5 py-1.5 bg-teal text-white rounded-lg text-xs font-semibold"
-                      >
+                      <button onClick={() => marcarConcluida(r.id)} className="flex items-center gap-1 px-2.5 py-1.5 bg-teal text-white rounded-lg text-xs font-semibold">
                         <CheckCircle2 size={12} /> Feito
                       </button>
-                      <button
-                        onClick={() => remarcar(r.id)}
-                        className="flex items-center gap-1 px-2.5 py-1.5 bg-gray-200 text-gray-600 rounded-lg text-xs font-semibold"
-                      >
+                      <button onClick={() => remarcar(r.id)} className="flex items-center gap-1 px-2.5 py-1.5 bg-gray-200 text-gray-600 rounded-lg text-xs font-semibold">
                         <RotateCcw size={12} /> Remarcar
                       </button>
                     </div>
-                  )}
-                  {r.status === 'completed' && (
-                    <span className="text-xs text-teal font-semibold">✓ Concluída</span>
+                  ) : (
+                    <span className="text-xs text-teal font-semibold">Concluída</span>
                   )}
                 </div>
               ))}
