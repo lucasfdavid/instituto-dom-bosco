@@ -72,8 +72,9 @@ export default function AlunoCalendario() {
   return (
     <div className="p-6 max-w-5xl">
       <div className="mb-6">
-        <h2 className="font-serif text-base font-semibold text-navy capitalize whitespace-nowrap">Calendário</h2>
-      </div>
+        <h2 className="font-serif text-sm font-semibold text-navy capitalize whitespace-nowrap">
+  {format(current, 'MMMM yyyy', { locale: ptBR })}
+</h2>
 
       <div className="grid md:grid-cols-3 gap-4">
         {/* Calendário */}
