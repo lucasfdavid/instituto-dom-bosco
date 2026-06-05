@@ -152,7 +152,7 @@ export default function AlunoCalendario() {
                   <p className="font-semibold text-navy text-sm mb-0.5">{r.conteudo?.assunto}</p>
                   <p className="text-xs text-gray-400 mb-2">{r.conteudo?.materia} · {r.tipo}</p>
                   {r.status !== 'completed' && (
-                    <div className="flex gap-1.5">
+                    <div className="flex gap-1.5 flex-wrap">
                       <button
                         onClick={() => marcarConcluida(r.id)}
                         className="flex items-center gap-1 px-2.5 py-1.5 bg-teal text-white rounded-lg text-xs font-semibold"
