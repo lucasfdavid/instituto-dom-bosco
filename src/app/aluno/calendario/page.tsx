@@ -114,7 +114,7 @@ export default function AlunoCalendario() {
           </div>
         </div>
         <div className="bg-white rounded-2xl p-5 border border-gray-200 shadow-sm">
-          <h3 className="font-serif text-base font-semibold text-navy mb-1 capitalize">{selectedLabel}</h3>
+          <h3 className="font-serif text-sm font-semibold text-navy mb-1 capitalize whitespace-nowrap">{selectedLabel}</h3>
           <p className="font-condensed text-[10px] uppercase tracking-widest text-gray-400 mb-4">Revisões</p>
           {revisoesSelected.length === 0 ? (
             <p className="text-sm text-gray-400">Nenhuma revisão prevista.</p>
