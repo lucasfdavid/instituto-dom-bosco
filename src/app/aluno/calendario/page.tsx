@@ -67,7 +67,7 @@ export default function AlunoCalendario() {
   const mesAno = format(current, 'MMMM yyyy', { locale: ptBR })
 
   return (
-    <div className="p-6 max-w-5xl">
+    <div className="p-6">
       <div className="mb-6">
         <h1 className="font-serif text-3xl font-bold text-navy">Calendário</h1>
       </div>
