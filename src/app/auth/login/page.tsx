@@ -130,13 +130,13 @@ export default function LoginPage() {
         {/* Painel esquerdo */}
         <div className="hidden md:flex flex-col justify-between w-1/2 bg-gradient-to-br from-navy to-teal p-10 text-white">
           <div>
-            <div className="flex items-center gap-3 mb-12">
-              <div className="w-12 h-12 rounded-2xl bg-white/20 flex items-center justify-center overflow-hidden">
-                <img src="/images/coluna.png" alt="Coluna" className="w-8 h-8 object-contain" />
-              </div>
+            <div className="flex items-center gap-4 mb-12">
+              <img src="/images/coluna.png" alt="Coluna" className="h-16 w-auto object-contain" />
               <div>
-                <p className="font-serif text-lg font-semibold leading-tight text-white">Instituto Dom Bosco</p>
-                <p className="font-condensed text-white/60 text-xs uppercase tracking-widest">Psicologia e Aprendizagem</p>
+                <p className="font-condensed text-xs tracking-widest text-white/60 uppercase mb-0.5">Instituto</p>
+                <p className="font-serif text-3xl font-bold text-white leading-none">Dom</p>
+                <p className="font-serif text-3xl font-normal text-white leading-none">Bosco</p>
+                <p className="font-condensed text-[10px] tracking-widest text-white/50 uppercase mt-1">Psicologia e Aprendizagem</p>
               </div>
             </div>
             <h1 className="font-serif text-4xl font-bold leading-tight mb-4">
