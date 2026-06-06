@@ -9,6 +9,7 @@ import { Users, BarChart2, LogOut, BookOpen } from 'lucide-react'
 const navItems = [
   { href: '/professor', icon: Users, label: 'Meus alunos' },
   { href: '/professor/indicadores', icon: BarChart2, label: 'Indicadores' },
+  { href: '/professor/cursos', icon: BookOpen, label: 'Gerenciar cursos' },
 ]
 
 export default function ProfessorLayout({ children }: { children: React.ReactNode }) {
