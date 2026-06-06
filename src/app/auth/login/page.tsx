@@ -132,7 +132,7 @@ export default function LoginPage() {
           <div>
            <div className="flex items-center gap-4 mb-12">
               <img src="/images/coluna.png" alt="Coluna" className="h-24 w-auto object-contain" />
-              <img src="/images/Escrita_branca_-_fundo_transparente.png" alt="Instituto Dom Bosco" className="h-24 w-auto object-contain" />
+              <img src="/images/logo-branca.png" alt="Instituto Dom Bosco" className="h-24 w-auto object-contain" />
             </div>
             <h1 className="font-serif text-4xl font-bold leading-tight mb-4">
               Estude melhor,<br />não apenas mais.
