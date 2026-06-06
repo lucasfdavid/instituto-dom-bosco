@@ -121,6 +121,10 @@ export default function AlunoLayout({ children }: { children: React.ReactNode })
             </Link>
           )
         })}
+        <button onClick={handleLogout} className="flex-1 flex flex-col items-center gap-1 py-2.5">
+          <LogOut size={20} className="text-gray-400" />
+          <span className="font-condensed text-[9px] uppercase tracking-wide text-gray-400">Sair</span>
+        </button>
       </nav>
     </div>
   )
