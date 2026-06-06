@@ -132,11 +132,10 @@ export default function LoginPage() {
           <div>
             <div className="flex items-center gap-3 mb-12">
               <div className="w-12 h-12 rounded-2xl bg-white/20 flex items-center justify-center overflow-hidden">
-                <img src="/images/logo.png" alt="Logo" className="w-10 h-10 object-contain"
-                  onError={e => { e.currentTarget.style.display = 'none' }} />
+                <img src="/images/coluna.png" alt="Coluna" className="w-8 h-8 object-contain" />
               </div>
               <div>
-                <p className="font-serif text-lg font-semibold leading-tight">Instituto Dom Bosco</p>
+                <p className="font-serif text-lg font-semibold leading-tight text-white">Instituto Dom Bosco</p>
                 <p className="font-condensed text-white/60 text-xs uppercase tracking-widest">Psicologia e Aprendizagem</p>
               </div>
             </div>
