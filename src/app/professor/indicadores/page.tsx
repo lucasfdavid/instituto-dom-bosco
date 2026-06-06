@@ -8,14 +8,9 @@ import { Users, CheckCircle2, Clock, TrendingUp } from 'lucide-react'
 export default function ProfessorIndicadores() {
   const router = useRouter()
   const [loading, setLoading] = useState(true)
-  const [stats, setStats] = useState({
-    totalAlunos: 0,
-    totalRevisoes: 0,
-    revisoesConcluidadas: 0,
-    taxaMedia: 0,
-  })
-  const [porAluno, setPorAluno] = useState<any[]>([])
-  const [porMateria, setPorMateria] = useState<{ materia: string; total: number }[]>([])
+  const [visao, setVisao] = useState<'geral' | string>('geral')
+  const [alunos, setAlunos] = useState<any[]>([])
+  const [porMateria, setPorMateria] = useState<Record<string, { materia: string; total: number }[]>>({})
 
   useEffect(() => {
     async function load() {
@@ -28,54 +23,51 @@ export default function ProfessorIndicadores() {
         .select('aluno:profiles!aluno_id(id, nome)')
         .eq('professor_id', session.user.id)
 
-      const alunos = vinculos?.map((v: any) => v.aluno) ?? []
+      const alunosBase = vinculos?.map((v: any) => v.aluno) ?? []
 
       const alunosComStats = await Promise.all(
-        alunos.map(async (aluno: any) => {
+        alunosBase.map(async (aluno: any) => {
           const { data: revisoes } = await supabase
-            .from('revisoes')
-            .select('status')
-            .eq('aluno_id', aluno.id)
+            .from('revisoes').select('status, tipo').eq('aluno_id', aluno.id)
+          const { data: conteudos } = await supabase
+            .from('conteudos').select('materia').eq('aluno_id', aluno.id)
 
           const total = revisoes?.length ?? 0
           const concluidas = revisoes?.filter(r => r.status === 'completed').length ?? 0
           const pct = total > 0 ? Math.round((concluidas / total) * 100) : 0
-          return { ...aluno, total, concluidas, pct }
+
+          const materiaMap: Record<string, number> = {}
+          conteudos?.forEach(c => { materiaMap[c.materia] = (materiaMap[c.materia] ?? 0) + 1 })
+          const materias = Object.entries(materiaMap)
+            .map(([materia, total]) => ({ materia, total }))
+            .sort((a, b) => b.total - a.total)
+
+          const porIntervalo = ['D1', 'D7', 'D30'].map(tipo => ({
+            tipo,
+            concluidas: revisoes?.filter(r => r.tipo === tipo && r.status === 'completed').length ?? 0,
+            pendentes: revisoes?.filter(r => r.tipo === tipo && r.status !== 'completed').length ?? 0,
+          }))
+
+          return { ...aluno, total, concluidas, pct, nConteudos: conteudos?.length ?? 0, materias, porIntervalo }
         })
       )
 
-      // Por matéria
-      const materiaMap: Record<string, number> = {}
-      await Promise.all(
-        alunos.map(async (aluno: any) => {
-          const { data: conteudos } = await supabase
-            .from('conteudos')
-            .select('materia')
-            .eq('aluno_id', aluno.id)
-          conteudos?.forEach(c => {
-            materiaMap[c.materia] = (materiaMap[c.materia] ?? 0) + 1
-          })
+      // Matérias geral
+      const materiaGeralMap: Record<string, number> = {}
+      alunosComStats.forEach(a => {
+        a.materias.forEach(({ materia, total }: any) => {
+          materiaGeralMap[materia] = (materiaGeralMap[materia] ?? 0) + total
         })
-      )
-
-      const totalRevisoes = alunosComStats.reduce((s, a) => s + a.total, 0)
-      const totalConcluidas = alunosComStats.reduce((s, a) => s + a.concluidas, 0)
-      const taxaMedia = alunosComStats.length
-        ? Math.round(alunosComStats.reduce((s, a) => s + a.pct, 0) / alunosComStats.length)
-        : 0
-
-      setStats({
-        totalAlunos: alunos.length,
-        totalRevisoes,
-        revisoesConcluidadas: totalConcluidas,
-        taxaMedia,
       })
-      setPorAluno(alunosComStats)
-      setPorMateria(
-        Object.entries(materiaMap)
-          .map(([materia, total]) => ({ materia, total }))
-          .sort((a, b) => b.total - a.total)
-      )
+      const materiasGeral = Object.entries(materiaGeralMap)
+        .map(([materia, total]) => ({ materia, total }))
+        .sort((a, b) => b.total - a.total)
+
+      const porMateriaMap: Record<string, any[]> = { geral: materiasGeral }
+      alunosComStats.forEach(a => { porMateriaMap[a.id] = a.materias })
+
+      setAlunos(alunosComStats)
+      setPorMateria(porMateriaMap)
       setLoading(false)
     }
     load()
@@ -87,26 +79,67 @@ export default function ProfessorIndicadores() {
     </div>
   )
 
-  const statCards = [
-    { icon: Users, label: 'Alunos ativos', value: stats.totalAlunos, color: 'bg-gradient-to-br from-navy to-navy-light' },
-    { icon: CheckCircle2, label: 'Revisões concluídas', value: stats.revisoesConcluidadas, color: 'bg-gradient-to-br from-teal to-teal-mid' },
-    { icon: Clock, label: 'Total de revisões', value: stats.totalRevisoes, color: 'bg-gradient-to-br from-orange-400 to-orange-500' },
-    { icon: TrendingUp, label: 'Taxa média de adesão', value: `${stats.taxaMedia}%`, color: 'bg-gradient-to-br from-purple-500 to-purple-600' },
+  const totalRevisoes = alunos.reduce((s, a) => s + a.total, 0)
+  const totalConcluidas = alunos.reduce((s, a) => s + a.concluidas, 0)
+  const taxaMedia = alunos.length ? Math.round(alunos.reduce((s, a) => s + a.pct, 0) / alunos.length) : 0
+
+  const alunoSelecionado = visao !== 'geral' ? alunos.find(a => a.id === visao) : null
+
+  const statsGeral = [
+    { icon: Users, label: 'Alunos ativos', value: alunos.length, color: 'bg-gradient-to-br from-navy to-navy-light' },
+    { icon: CheckCircle2, label: 'Revisões concluídas', value: totalConcluidas, color: 'bg-gradient-to-br from-teal to-teal-mid' },
+    { icon: Clock, label: 'Total de revisões', value: totalRevisoes, color: 'bg-gradient-to-br from-orange-400 to-orange-500' },
+    { icon: TrendingUp, label: 'Taxa média', value: `${taxaMedia}%`, color: 'bg-gradient-to-br from-purple-500 to-purple-600' },
   ]
 
-  const maxPorAluno = Math.max(...porAluno.map(a => a.total), 1)
-  const maxPorMateria = Math.max(...porMateria.map(m => m.total), 1)
+  const statsAluno = alunoSelecionado ? [
+    { icon: CheckCircle2, label: 'Revisões concluídas', value: alunoSelecionado.concluidas, color: 'bg-gradient-to-br from-teal to-teal-mid' },
+    { icon: Clock, label: 'Total de revisões', value: alunoSelecionado.total, color: 'bg-gradient-to-br from-orange-400 to-orange-500' },
+    { icon: TrendingUp, label: 'Taxa de adesão', value: `${alunoSelecionado.pct}%`, color: 'bg-gradient-to-br from-purple-500 to-purple-600' },
+    { icon: Users, label: 'Conteúdos', value: alunoSelecionado.nConteudos, color: 'bg-gradient-to-br from-navy to-navy-light' },
+  ] : []
+
+  const statsAtivos = visao === 'geral' ? statsGeral : statsAluno
+  const materiasAtivas = porMateria[visao] ?? []
+  const maxMateria = Math.max(...materiasAtivas.map(m => m.total), 1)
 
   return (
     <div className="p-6 max-w-4xl">
       <div className="mb-6">
         <h1 className="font-serif text-3xl font-bold text-navy">Indicadores</h1>
-        <p className="text-gray-400 mt-1">Visão geral do progresso dos seus alunos</p>
+        <p className="text-gray-400 mt-1">Acompanhe o progresso dos seus alunos</p>
+      </div>
+
+      {/* Seletor geral / por aluno */}
+      <div className="flex gap-2 flex-wrap mb-6">
+        <button
+          onClick={() => setVisao('geral')}
+          className={`px-4 py-2 rounded-xl text-sm font-semibold transition-all ${
+            visao === 'geral'
+              ? 'bg-gradient-to-r from-navy to-teal text-white shadow-sm'
+              : 'bg-white border border-gray-200 text-gray-500 hover:border-teal hover:text-teal'
+          }`}
+        >
+          Geral
+        </button>
+        {alunos.map(aluno => (
+          <button
+            key={aluno.id}
+            onClick={() => setVisao(aluno.id)}
+            className={`px-4 py-2 rounded-xl text-sm font-semibold transition-all ${
+              visao === aluno.id
+                ? 'bg-gradient-to-r from-navy to-teal text-white shadow-sm'
+                : 'bg-white border border-gray-200 text-gray-500 hover:border-teal hover:text-teal'
+            }`}
+          >
+            {aluno.nome.split(' ')[0]}
+          </button>
+        ))}
       </div>
 
       {/* Stats */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-8">
-        {statCards.map(({ icon: Icon, label, value, color }) => (
+        {statsAtivos.map(({ icon: Icon, label, value, color }) => (
           <div key={label} className={`${color} rounded-2xl p-4 shadow-sm`}>
             <Icon size={20} className="text-white opacity-80 mb-2" />
             <p className="font-bold text-2xl text-white">{value}</p>
@@ -116,49 +149,69 @@ export default function ProfessorIndicadores() {
       </div>
 
       <div className="grid md:grid-cols-2 gap-4">
-        {/* Progresso por aluno */}
-        <div className="bg-white rounded-2xl p-5 border border-gray-200 shadow-sm">
-          <h2 className="font-serif text-lg font-semibold text-navy mb-4">Progresso por aluno</h2>
-          {porAluno.length === 0 ? (
-            <p className="text-sm text-gray-400 text-center py-4">Nenhum aluno vinculado.</p>
-          ) : (
+        {/* Progresso por aluno (só no geral) */}
+        {visao === 'geral' && (
+          <div className="bg-white rounded-2xl p-5 border border-gray-200 shadow-sm">
+            <h2 className="font-serif text-lg font-semibold text-navy mb-4">Progresso por aluno</h2>
+            {alunos.length === 0 ? (
+              <p className="text-sm text-gray-400 text-center py-4">Nenhum aluno vinculado.</p>
+            ) : (
+              <div className="flex flex-col gap-4">
+                {alunos.map(aluno => (
+                  <div key={aluno.id}>
+                    <div className="flex justify-between text-sm mb-1">
+                      <span className="font-medium text-navy">{aluno.nome}</span>
+                      <span className="text-gray-400">{aluno.concluidas}/{aluno.total} ({aluno.pct}%)</span>
+                    </div>
+                    <div className="h-2 bg-gray-100 rounded-full overflow-hidden">
+                      <div className="h-full bg-gradient-to-r from-navy to-teal rounded-full" style={{ width: `${aluno.pct}%` }} />
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+        )}
+
+        {/* Progresso por intervalo (só por aluno) */}
+        {visao !== 'geral' && alunoSelecionado && (
+          <div className="bg-white rounded-2xl p-5 border border-gray-200 shadow-sm">
+            <h2 className="font-serif text-lg font-semibold text-navy mb-4">Progresso por intervalo</h2>
             <div className="flex flex-col gap-4">
-              {porAluno.map(aluno => (
-                <div key={aluno.id}>
-                  <div className="flex justify-between text-sm mb-1">
-                    <span className="font-medium text-navy">{aluno.nome}</span>
-                    <span className="text-gray-400">{aluno.concluidas}/{aluno.total} ({aluno.pct}%)</span>
+              {alunoSelecionado.porIntervalo.map(({ tipo, concluidas, pendentes }: any) => {
+                const total = concluidas + pendentes
+                const pct = total > 0 ? Math.round((concluidas / total) * 100) : 0
+                return (
+                  <div key={tipo}>
+                    <div className="flex justify-between text-sm mb-1">
+                      <span className="font-medium text-navy">Revisão {tipo}</span>
+                      <span className="text-gray-400">{concluidas}/{total} ({pct}%)</span>
+                    </div>
+                    <div className="h-2 bg-gray-100 rounded-full overflow-hidden">
+                      <div className="h-full bg-gradient-to-r from-teal to-navy rounded-full" style={{ width: `${pct}%` }} />
+                    </div>
                   </div>
-                  <div className="h-2 bg-gray-100 rounded-full overflow-hidden">
-                    <div
-                      className="h-full bg-gradient-to-r from-navy to-teal rounded-full transition-all"
-                      style={{ width: `${aluno.pct}%` }}
-                    />
-                  </div>
-                </div>
-              ))}
+                )
+              })}
             </div>
-          )}
-        </div>
+          </div>
+        )}
 
         {/* Conteúdos por matéria */}
         <div className="bg-white rounded-2xl p-5 border border-gray-200 shadow-sm">
           <h2 className="font-serif text-lg font-semibold text-navy mb-4">Conteúdos por matéria</h2>
-          {porMateria.length === 0 ? (
+          {materiasAtivas.length === 0 ? (
             <p className="text-sm text-gray-400 text-center py-4">Nenhum conteúdo registrado.</p>
           ) : (
             <div className="flex flex-col gap-3">
-              {porMateria.map(({ materia, total }) => (
+              {materiasAtivas.map(({ materia, total }) => (
                 <div key={materia}>
                   <div className="flex justify-between text-sm mb-1">
                     <span className="font-medium text-navy">{materia}</span>
                     <span className="text-gray-400">{total}</span>
                   </div>
                   <div className="h-2 bg-gray-100 rounded-full overflow-hidden">
-                    <div
-                      className="h-full bg-gradient-to-r from-teal to-navy rounded-full transition-all"
-                      style={{ width: `${(total / maxPorMateria) * 100}%` }}
-                    />
+                    <div className="h-full bg-gradient-to-r from-teal to-navy rounded-full" style={{ width: `${(total / maxMateria) * 100}%` }} />
                   </div>
                 </div>
               ))}
