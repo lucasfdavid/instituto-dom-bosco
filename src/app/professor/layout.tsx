@@ -4,7 +4,7 @@ import { useEffect, useState } from 'react'
 import { useRouter, usePathname } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
 import Link from 'next/link'
-import { Users, BarChart2, LogOut, BookOpen } from 'lucide-react'
+import { Users, BarChart2, LogOut, BookOpen, Settings } from 'lucide-react'
 
 const navItems = [
   { href: '/professor', icon: Users, label: 'Meus alunos' },
