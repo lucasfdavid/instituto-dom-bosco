@@ -166,7 +166,7 @@ export default function LoginPage() {
               </div>
             </div>
           </div>
-          <p className="text-white/40 text-xs">© 2026 Instituto Dom Bosco · Todos os direitos reservados</p>
+          <p className="text-white/40 text-xs mt-6">© 2026 Instituto Dom Bosco · Todos os direitos reservados</p>
         </div>
 
         {/* Painel direito */}
