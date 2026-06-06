@@ -71,8 +71,8 @@ export default function AlunoCalendario() {
       <div className="mb-6">
         <h1 className="font-serif text-3xl font-bold text-navy">Calendário</h1>
       </div>
-      <div className="grid md:grid-cols-5 gap-4">
-        <div className="md:col-span-3 bg-white rounded-2xl p-5 border border-gray-200 shadow-sm">
+      <div className="grid md:grid-cols-2 gap-4">
+        <div className="bg-white rounded-2xl p-5 border border-gray-200 shadow-sm">
           <div className="flex items-center justify-between mb-4">
             <button onClick={() => setCurrent(subMonths(current, 1))} className="w-8 h-8 flex items-center justify-center rounded-lg border border-gray-200 text-navy hover:bg-gray-50">←</button>
             <div className="flex items-center gap-3">
