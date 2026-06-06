@@ -146,11 +146,19 @@ export default function LoginPage() {
             <p className="text-white/70 text-sm leading-relaxed mb-10">
               Plataforma de revisão espaçada nos intervalos <strong>D+1, D+7 e D+30</strong>. Registre o que estudou hoje e receba lembretes automáticos para relembrar o conteúdo quando mais importa.
             </p>
-            <div className="grid grid-cols-3 gap-3">
-              {[{ label: 'D+1', sub: '1 dia' }, { label: 'D+7', sub: '1 semana' }, { label: 'D+30', sub: '1 mês' }].map(({ label, sub }) => (
-                <div key={label} className="bg-white/15 rounded-2xl p-4 text-center border border-white/20">
-                  <p className="font-serif text-2xl font-bold">{label}</p>
-                  <p className="text-white/60 text-xs mt-1">{sub}</p>
+            <div className="flex flex-col gap-3">
+              {[
+                { icon: '📍', label: 'Endereço', valor: 'Rua 17-A, Nº 671 — Setor Aeroporto' },
+                { icon: '📱', label: 'WhatsApp', valor: '(62) 99264-5613' },
+                { icon: '📸', label: 'Instagram', valor: '@inst.dombosco' },
+                { icon: '👩‍⚕️', label: 'Sarah', valor: '@sarahpaivafernandes' },
+              ].map(({ icon, label, valor }) => (
+                <div key={label} className="flex items-center gap-3 bg-white/10 border border-white/15 rounded-xl px-4 py-3">
+                  <span className="text-lg">{icon}</span>
+                  <div>
+                    <p className="text-white/50 text-xs font-condensed uppercase tracking-wide">{label}</p>
+                    <p className="text-white text-sm font-medium">{valor}</p>
+                  </div>
                 </div>
               ))}
             </div>
