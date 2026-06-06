@@ -35,9 +35,9 @@ export default function AlunoLayout({ children }: { children: React.ReactNode })
         window.location.href = '/professor'
         return 
       }
-      setNome(profile.nome ?? '')
-      setEmail(profile.email ?? '')
-      setInitials((profile.nome ?? '').split(' ').map((x: string) => x[0]).slice(0, 2).join(''))
+      setNome(profile?.nome ?? '')
+      setEmail(profile?.email ?? '')
+      setInitials((profile?.nome ?? '').split(' ').map((x: string) => x[0]).slice(0, 2).join(''))
     }
     load()
   }, [])
