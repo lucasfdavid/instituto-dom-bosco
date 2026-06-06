@@ -111,30 +111,18 @@ export default function ProfessorIndicadores() {
       </div>
 
       {/* Seletor geral / por aluno */}
-      <div className="flex gap-2 flex-wrap mb-6">
-        <button
-          onClick={() => setVisao('geral')}
-          className={`px-4 py-2 rounded-xl text-sm font-semibold transition-all ${
-            visao === 'geral'
-              ? 'bg-gradient-to-r from-navy to-teal text-white shadow-sm'
-              : 'bg-white border border-gray-200 text-gray-500 hover:border-teal hover:text-teal'
-          }`}
+      <div className="mb-6 max-w-xs">
+        <label className="block text-sm font-semibold text-navy mb-2">Visualizar indicadores de</label>
+        <select
+          value={visao}
+          onChange={e => setVisao(e.target.value)}
+          className="w-full px-4 py-3 rounded-xl border border-gray-200 bg-white text-navy text-sm outline-none focus:border-teal transition-all"
         >
-          Geral
-        </button>
-        {alunos.map(aluno => (
-          <button
-            key={aluno.id}
-            onClick={() => setVisao(aluno.id)}
-            className={`px-4 py-2 rounded-xl text-sm font-semibold transition-all ${
-              visao === aluno.id
-                ? 'bg-gradient-to-r from-navy to-teal text-white shadow-sm'
-                : 'bg-white border border-gray-200 text-gray-500 hover:border-teal hover:text-teal'
-            }`}
-          >
-            {aluno.nome.split(' ')[0]}
-          </button>
-        ))}
+          <option value="geral">Todos os alunos (Geral)</option>
+          {alunos.map(aluno => (
+            <option key={aluno.id} value={aluno.id}>{aluno.nome}</option>
+          ))}
+        </select>
       </div>
 
       {/* Stats */}
