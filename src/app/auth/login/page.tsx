@@ -174,8 +174,7 @@ export default function LoginPage() {
           {/* Logo mobile */}
           <div className="md:hidden flex items-center gap-3 mb-6">
             <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-navy to-teal flex items-center justify-center overflow-hidden">
-              <img src="/images/logo.png" alt="Logo" className="w-8 h-8 object-contain"
-                onError={e => { e.currentTarget.style.display = 'none' }} />
+              <img src="/images/coluna.png" alt="Coluna" className="w-7 h-7 object-contain" />
             </div>
             <div>
               <p className="font-serif text-base font-semibold text-navy">Instituto Dom Bosco</p>
