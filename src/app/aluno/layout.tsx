@@ -31,7 +31,10 @@ export default function AlunoLayout({ children }: { children: React.ReactNode })
         .select('nome, email, role')
         .eq('id', session.user.id)
         .single()
-      if (profile?.role !== 'aluno') { router.push('/professor'); return }
+      if (profile?.role === 'professor') { 
+        window.location.href = '/professor'
+        return 
+      }
       setNome(profile.nome ?? '')
       setEmail(profile.email ?? '')
       setInitials((profile.nome ?? '').split(' ').map((x: string) => x[0]).slice(0, 2).join(''))
