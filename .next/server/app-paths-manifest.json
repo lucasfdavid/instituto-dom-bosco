@@ -1,0 +1,7 @@
+{
+  "/_not-found/page": "app/_not-found/page.js",
+  "/auth/login/page": "app/auth/login/page.js",
+  "/aluno/registrar/page": "app/aluno/registrar/page.js",
+  "/professor/aluno/[id]/page": "app/professor/aluno/[id]/page.js",
+  "/aluno/page": "app/aluno/page.js"
+}

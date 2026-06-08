@@ -130,9 +130,8 @@ export default function LoginPage() {
         {/* Painel esquerdo */}
         <div className="hidden md:flex flex-col justify-between w-1/2 bg-gradient-to-br from-navy to-teal p-10 text-white">
           <div>
-           <div className="flex items-center gap-4 mb-12">
-              <img src="/images/coluna.png" alt="Coluna" className="h-24 w-auto object-contain" />
-              <img src="/images/logo-branca.png" alt="Instituto Dom Bosco" className="h-24 w-auto object-contain" />
+           <div className="mb-12">
+              <img src="/images/coluna-logo.png" alt="Instituto Dom Bosco" className="h-28 w-auto object-contain" />
             </div>
             <h1 className="font-serif text-4xl font-bold leading-tight mb-4">
               Estude melhor,<br />não apenas mais.
@@ -167,14 +166,8 @@ export default function LoginPage() {
         <div className="flex-1 p-8 md:p-10 flex flex-col justify-center overflow-y-auto max-h-screen">
 
           {/* Logo mobile */}
-          <div className="md:hidden flex items-center gap-3 mb-6">
-            <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-navy to-teal flex items-center justify-center overflow-hidden">
-              <img src="/images/coluna.png" alt="Coluna" className="w-7 h-7 object-contain" />
-            </div>
-            <div>
-              <p className="font-serif text-base font-semibold text-navy">Instituto Dom Bosco</p>
-              <p className="font-condensed text-xs text-gray-400 uppercase tracking-widest">Psicologia e Aprendizagem</p>
-            </div>
+          <div className="md:hidden mb-6">
+            <img src="/images/coluna-logo.png" alt="Instituto Dom Bosco" className="h-16 w-auto object-contain" />
           </div>
 
           {/* Tabs login/cadastro */}
