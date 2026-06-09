@@ -10,6 +10,12 @@ const configuracoes = [
     titulo: 'Gerenciar cursos',
     descricao: 'Adicione, edite ou desative cursos e turmas disponíveis para os alunos',
   },
+  {
+    href: '/professor/convidar',
+    icon: UserPlus,
+    titulo: 'Convidar professor',
+    descricao: 'Envie um convite por e-mail para adicionar um novo professor ao instituto',
+  },
 ]
 
 export default function ConfiguracoesPage() {
