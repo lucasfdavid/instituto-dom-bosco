@@ -50,6 +50,9 @@ create table public.revisoes (
   data_revisao date not null,
   concluida boolean default false,
   concluida_em timestamptz,
+  status text,
+  teacher_comment text,
+  obs_aluno text,
   criado_em timestamptz default now()
 );
 

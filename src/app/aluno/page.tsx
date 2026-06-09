@@ -3,9 +3,9 @@
 import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
-import { Clock, AlertCircle, Bell, BookOpen, CheckCircle2, RotateCcw, X, MessageSquare } from 'lucide-react'
+import { Clock, AlertCircle, CalendarDays, BookOpen, CheckCircle2, RotateCcw, X, MessageSquare } from 'lucide-react'
 import { hoje, formatarDataCurta } from '@/lib/utils'
-import { format, parseISO } from 'date-fns'
+import { format, parseISO, startOfWeek, endOfWeek } from 'date-fns'
 import { ptBR } from 'date-fns/locale'
 
 export default function AlunoHome() {
@@ -14,7 +14,7 @@ export default function AlunoHome() {
   const [nome, setNome] = useState('')
   const [revisoesHoje, setRevisoesHoje] = useState<any[]>([])
   const [revisoesAtrasadas, setRevisoesAtrasadas] = useState<any[]>([])
-  const [proximasRevisoes, setProximasRevisoes] = useState<any[]>([])
+  const [revisoesSemana, setRevisoesSemana] = useState<any[]>([])
   const [revisoesConcluidas, setRevisoesConcluidas] = useState<any[]>([])
   const [totalEstudos, setTotalEstudos] = useState(0)
   const [revisaoSelecionada, setRevisaoSelecionada] = useState<any>(null)
@@ -30,6 +30,9 @@ export default function AlunoHome() {
     setNome(profile?.nome?.split(' ')[0] ?? 'Aluno')
 
     const dataHoje = hoje()
+    const now = new Date()
+    const inicioSemana = format(startOfWeek(now, { weekStartsOn: 1 }), 'yyyy-MM-dd')
+    const fimSemana = format(endOfWeek(now, { weekStartsOn: 1 }), 'yyyy-MM-dd')
 
     const { data: rHoje } = await supabase
       .from('revisoes')
@@ -47,14 +50,13 @@ export default function AlunoHome() {
       .neq('status', 'completed')
       .order('data_revisao')
 
-    const { data: rProximas } = await supabase
+    const { data: rSemana } = await supabase
       .from('revisoes')
       .select('*, conteudo:conteudos(*)')
       .eq('aluno_id', session.user.id)
-      .gt('data_revisao', dataHoje)
-      .neq('status', 'completed')
+      .gte('data_revisao', inicioSemana)
+      .lte('data_revisao', fimSemana)
       .order('data_revisao')
-      .limit(3)
 
     const { data: rConcluidas } = await supabase
       .from('revisoes')
@@ -71,7 +73,7 @@ export default function AlunoHome() {
 
     setRevisoesHoje(rHoje ?? [])
     setRevisoesAtrasadas(rAtrasadas ?? [])
-    setProximasRevisoes(rProximas ?? [])
+    setRevisoesSemana(rSemana ?? [])
     setRevisoesConcluidas(rConcluidas ?? [])
     setTotalEstudos(conteudos?.length ?? 0)
     setLoading(false)
@@ -103,10 +105,12 @@ export default function AlunoHome() {
   const dataHoje = hoje()
   const diaSemana = format(parseISO(dataHoje), "EEEE, dd 'de' MMMM", { locale: ptBR })
 
+  const revisoesRestantesSemana = revisoesSemana.filter(r => r.data_revisao > dataHoje && r.status !== 'completed').length
+
   const stats = [
     { icon: Clock, label: 'Para revisar hoje', value: revisoesHoje.length, color: 'text-yellow-500' },
     { icon: AlertCircle, label: 'Atrasadas', value: revisoesAtrasadas.length, color: 'text-red-500' },
-    { icon: Bell, label: 'Próx. 7 dias', value: proximasRevisoes.length, color: 'text-purple-500' },
+    { icon: CalendarDays, label: 'Rest. esta semana', value: revisoesRestantesSemana, color: 'text-purple-500' },
     { icon: BookOpen, label: 'Estudos registrados', value: totalEstudos, color: 'text-teal' },
   ]
 
@@ -245,6 +249,7 @@ export default function AlunoHome() {
 
       {aba === 'pendentes' ? (
         <>
+          {/* Revisões de hoje */}
           <div className="mb-8">
             <h2 className="font-serif text-xl font-semibold text-navy flex items-center gap-2 mb-4">
               <Clock size={20} className="text-yellow-500" /> Revisões de hoje
@@ -261,6 +266,8 @@ export default function AlunoHome() {
               </div>
             )}
           </div>
+
+          {/* Revisões atrasadas */}
           {revisoesAtrasadas.length > 0 && (
             <div className="mb-8">
               <h2 className="font-serif text-xl font-semibold text-navy flex items-center gap-2 mb-4">
@@ -271,14 +278,40 @@ export default function AlunoHome() {
               </div>
             </div>
           )}
-          {proximasRevisoes.length > 0 && (
+
+          {/* Esta semana */}
+          {revisoesSemana.filter(r => r.data_revisao > dataHoje).length > 0 && (
             <div>
               <h2 className="font-serif text-xl font-semibold text-navy flex items-center gap-2 mb-4">
-                <Bell size={20} className="text-purple-500" /> Próximas revisões
+                <CalendarDays size={20} className="text-purple-500" /> Esta semana
               </h2>
-              <div className="flex flex-col gap-3">
-                {proximasRevisoes.map(r => <RevCard key={r.id} r={r} showActions={false} />)}
-              </div>
+              {(() => {
+                const diasUnicos = [...new Set(
+                  revisoesSemana
+                    .filter(r => r.data_revisao > dataHoje)
+                    .map(r => r.data_revisao)
+                )].sort()
+                return (
+                  <div className="flex flex-col gap-6">
+                    {diasUnicos.map(dia => {
+                      const labelDia = format(parseISO(dia as string), "EEEE, dd/MM", { locale: ptBR })
+                      const cardsNoDia = revisoesSemana.filter(r => r.data_revisao === dia)
+                      return (
+                        <div key={dia as string}>
+                          <div className="flex items-center gap-2 mb-2">
+                            <span className="font-condensed text-xs font-bold uppercase tracking-wider px-2.5 py-1 rounded-full bg-purple-100 text-purple-700">
+                              {labelDia}
+                            </span>
+                          </div>
+                          <div className="flex flex-col gap-3">
+                            {cardsNoDia.map(r => <RevCard key={r.id} r={r} showActions={false} />)}
+                          </div>
+                        </div>
+                      )
+                    })}
+                  </div>
+                )
+              })()}
             </div>
           )}
         </>
