@@ -32,10 +32,11 @@ export default function ConvidarProfessor() {
       }
     )
 
-    const data = await response.json()
+   const data = await response.json()
+    console.log('Response status:', response.status, 'Data:', data)
 
     if (!response.ok || data.error) {
-      setErro(data.error ?? 'Erro ao enviar convite.')
+      setErro(data.error ?? `Erro ${response.status}: ${JSON.stringify(data)}`)
       setLoading(false)
       return
     }
