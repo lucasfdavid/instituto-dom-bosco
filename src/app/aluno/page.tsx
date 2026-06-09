@@ -154,7 +154,7 @@ export default function AlunoHome() {
 
   return (
     <div className="p-6 max-w-4xl">
-      {/* Modal de detalhe da revisão */}
+      {/* Modal */}
       {revisaoSelecionada && (
         <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
           <div className="bg-white rounded-2xl p-6 w-full max-w-md shadow-xl">
@@ -171,17 +171,14 @@ export default function AlunoHome() {
                 <X size={20} />
               </button>
             </div>
-
             <h3 className="font-serif text-xl font-bold text-navy mb-1">{revisaoSelecionada.conteudo?.assunto}</h3>
             <p className="text-xs text-gray-400 mb-4">Prevista: {formatarDataCurta(revisaoSelecionada.data_revisao)}</p>
-
             {revisaoSelecionada.conteudo?.descricao && (
               <div className="bg-gray-50 rounded-xl p-3 mb-4">
                 <p className="text-xs font-semibold text-gray-400 uppercase tracking-wide mb-1">Descrição</p>
                 <p className="text-sm text-navy">{revisaoSelecionada.conteudo.descricao}</p>
               </div>
             )}
-
             {revisaoSelecionada.teacher_comment && (
               <div className="bg-teal-light border border-teal/20 rounded-xl p-3 mb-4">
                 <div className="flex items-center gap-1.5 mb-1">
@@ -191,7 +188,6 @@ export default function AlunoHome() {
                 <p className="text-sm text-navy">{revisaoSelecionada.teacher_comment}</p>
               </div>
             )}
-
             {revisaoSelecionada.status !== 'completed' && (
               <div className="flex gap-2 mt-4">
                 <button
@@ -218,6 +214,21 @@ export default function AlunoHome() {
         <p className="text-gray-400 mt-1 capitalize">{diaSemana}</p>
       </div>
 
+      {/* Stats */}
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-6">
+        {stats.map(({ icon: Icon, label, value, color }) => (
+          <div key={label} className="bg-white rounded-2xl p-4 border border-gray-200 shadow-sm">
+            <div className="flex items-center gap-2 mb-2">
+              <Icon size={18} className={color} />
+            </div>
+            <p className="font-bold text-2xl text-navy">{value}</p>
+            <p className="text-xs text-gray-400 mt-0.5">{label}</p>
+          </div>
+        ))}
+      </div>
+
+      {/* Seletor pendentes/concluídas */}
+      <div className="flex gap-2 mb-6 bg-gray-100 p-1 rounded-xl">
         <button
           onClick={() => setAba('pendentes')}
           className={`flex-1 py-2.5 rounded-lg text-sm font-semibold transition-all ${aba === 'pendentes' ? 'bg-white text-navy shadow-sm' : 'text-gray-400 hover:text-navy'}`}
@@ -232,25 +243,8 @@ export default function AlunoHome() {
         </button>
       </div>
 
-    {/* Seletor pendentes/concluídas */}
-      <div className="flex gap-2 mb-6 bg-gray-100 p-1 rounded-xl">
-
-      {/* Stats */}
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-8">
-        {stats.map(({ icon: Icon, label, value, color }) => (
-          <div key={label} className="bg-white rounded-2xl p-4 border border-gray-200 shadow-sm">
-            <div className="flex items-center gap-2 mb-2">
-              <Icon size={18} className={color} />
-            </div>
-            <p className="font-bold text-2xl text-navy">{value}</p>
-            <p className="text-xs text-gray-400 mt-0.5">{label}</p>
-          </div>
-        ))}
-      </div>
-
       {aba === 'pendentes' ? (
         <>
-          {/* Revisões de hoje */}
           <div className="mb-8">
             <h2 className="font-serif text-xl font-semibold text-navy flex items-center gap-2 mb-4">
               <Clock size={20} className="text-yellow-500" /> Revisões de hoje
@@ -267,7 +261,6 @@ export default function AlunoHome() {
               </div>
             )}
           </div>
-
           {revisoesAtrasadas.length > 0 && (
             <div className="mb-8">
               <h2 className="font-serif text-xl font-semibold text-navy flex items-center gap-2 mb-4">
@@ -278,7 +271,6 @@ export default function AlunoHome() {
               </div>
             </div>
           )}
-
           {proximasRevisoes.length > 0 && (
             <div>
               <h2 className="font-serif text-xl font-semibold text-navy flex items-center gap-2 mb-4">
