@@ -26,12 +26,13 @@ export default function ProfessorPage() {
         .single()
       if (profile?.role !== 'professor') { router.push('/aluno'); return }
 
-      const { data: vinculos } = await supabase
-        .from('professor_aluno')
-        .select('aluno:profiles!aluno_id(id, nome, email, course, phone)')
-        .eq('professor_id', session.user.id)
+      const { data: alunosPerfis } = await supabase
+        .from('profiles')
+        .select('id, nome, email, course, phone')
+        .eq('role', 'aluno')
+        .order('nome')
 
-      const alunosBase = vinculos?.map((v: any) => v.aluno) ?? []
+      const alunosBase = alunosPerfis ?? []
 
       const alunosComStats = await Promise.all(
         alunosBase.map(async (aluno: any) => {

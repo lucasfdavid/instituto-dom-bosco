@@ -3,7 +3,7 @@
 import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
-import { Clock, AlertCircle, CalendarDays, BookOpen, CheckCircle2, RotateCcw, X, MessageSquare } from 'lucide-react'
+import { Clock, AlertCircle, CalendarDays, BookOpen, CheckCircle2, RotateCcw, X, MessageSquare, HelpCircle } from 'lucide-react'
 import { hoje, formatarDataCurta } from '@/lib/utils'
 import { format, parseISO, startOfWeek, endOfWeek } from 'date-fns'
 import { ptBR } from 'date-fns/locale'
@@ -19,6 +19,7 @@ export default function AlunoHome() {
   const [totalEstudos, setTotalEstudos] = useState(0)
   const [revisaoSelecionada, setRevisaoSelecionada] = useState<any>(null)
   const [aba, setAba] = useState<'pendentes' | 'concluidas'>('pendentes')
+  const [modalComoRevisar, setModalComoRevisar] = useState(false)
 
   async function loadData() {
     const supabase = createClient()
@@ -212,10 +213,97 @@ export default function AlunoHome() {
         </div>
       )}
 
+      {/* Modal Como Revisar */}
+      {modalComoRevisar && (
+        <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
+          <div className="bg-white rounded-2xl w-full max-w-lg shadow-xl flex flex-col max-h-[90vh]">
+            <div className="flex items-center justify-between p-6 pb-4 border-b border-gray-100">
+              <h2 className="font-serif text-xl font-bold text-navy">Como revisar?</h2>
+              <button onClick={() => setModalComoRevisar(false)} className="text-gray-400 hover:text-navy">
+                <X size={20} />
+              </button>
+            </div>
+            <div className="overflow-y-auto p-6 flex flex-col gap-6 text-sm text-gray-700">
+              {[
+                {
+                  tipo: 'D+1',
+                  subtitulo: '24 horas depois',
+                  cor: 'bg-blue-50 border-blue-200',
+                  badge: 'bg-blue-100 text-blue-700',
+                  intro: 'Faça uma revisão rápida do conteúdo estudado no dia anterior:',
+                  items: [
+                    'Tente lembrar os conceitos sem consultar o material (recordação ativa).',
+                    'Leia seus resumos, mapas mentais ou anotações.',
+                    'Resolva algumas questões sobre o tema.',
+                    'Identifique os pontos que já esqueceu.',
+                  ],
+                  rodape: 'Tempo sugerido: 10 a 20 minutos para cada hora de estudo original.',
+                },
+                {
+                  tipo: 'D+7',
+                  subtitulo: '7 dias depois',
+                  cor: 'bg-purple-50 border-purple-200',
+                  badge: 'bg-purple-100 text-purple-700',
+                  intro: 'O foco é verificar se o conhecimento permaneceu após uma semana:',
+                  items: [
+                    'Resolva questões mais desafiadoras.',
+                    'Explique o conteúdo com suas próprias palavras.',
+                    'Revise apenas os tópicos em que teve dificuldade.',
+                    'Atualize resumos ou flashcards se necessário.',
+                  ],
+                  rodape: 'Nessa etapa, a revisão costuma ser mais curta do que a de D+1.',
+                },
+                {
+                  tipo: 'D+30',
+                  subtitulo: '30 dias depois',
+                  cor: 'bg-teal-50 border-teal-200',
+                  badge: 'bg-teal-100 text-teal-700',
+                  intro: 'É a consolidação na memória de longo prazo:',
+                  items: [
+                    'Faça uma revisão geral dos pontos principais.',
+                    'Resolva questões de revisão ou simulados.',
+                    'Verifique se consegue recuperar o conteúdo sem consultar materiais.',
+                    'Reforce apenas o que ainda apresenta falhas.',
+                  ],
+                  rodape: 'Se o conteúdo estiver bem dominado, revisar apenas por meio de questões periódicas ou simulados.',
+                },
+              ].map(({ tipo, subtitulo, cor, badge, intro, items, rodape }) => (
+                <div key={tipo} className={`border rounded-xl p-4 ${cor}`}>
+                  <div className="flex items-center gap-2 mb-2">
+                    <span className={`font-condensed text-xs font-bold px-2.5 py-1 rounded-full ${badge}`}>{tipo}</span>
+                    <span className="font-semibold text-navy">{subtitulo}</span>
+                  </div>
+                  <p className="text-gray-600 mb-2">{intro}</p>
+                  <ul className="flex flex-col gap-1 mb-3">
+                    {items.map((item, i) => (
+                      <li key={i} className="flex gap-2 text-gray-600">
+                        <span className="text-teal mt-0.5 shrink-0">•</span>
+                        <span>{item}</span>
+                      </li>
+                    ))}
+                  </ul>
+                  <p className="text-xs text-gray-500 italic">{rodape}</p>
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* Header */}
       <div className="mb-6">
-        <h1 className="font-serif text-3xl font-bold text-navy">Olá, {nome}! 👋</h1>
-        <p className="text-gray-400 mt-1 capitalize">{diaSemana}</p>
+        <div className="flex items-start justify-between gap-4">
+          <div>
+            <h1 className="font-serif text-3xl font-bold text-navy">Olá, {nome}! 👋</h1>
+            <p className="text-gray-400 mt-1 capitalize">{diaSemana}</p>
+          </div>
+          <button
+            onClick={() => setModalComoRevisar(true)}
+            className="flex items-center gap-1.5 px-3 py-2 rounded-xl border border-gray-200 bg-white text-gray-500 text-xs font-semibold hover:border-teal hover:text-teal transition-colors shrink-0 shadow-sm"
+          >
+            <HelpCircle size={14} /> Como revisar
+          </button>
+        </div>
       </div>
 
       {/* Stats */}

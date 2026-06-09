@@ -138,15 +138,19 @@ export default function RegistrarPage() {
               <Bell size={16} className="text-teal" />
               <span className="text-sm font-semibold text-navy">Você será lembrado em:</span>
             </div>
-            <div className="flex gap-2 flex-wrap">
+            <div className="flex flex-col gap-2">
               {[
-                { label: `${fmtPreview(revisoes.D1)} (D+1)`, },
-                { label: `${fmtPreview(revisoes.D7)} (D+7)`, },
-                { label: `${fmtPreview(revisoes.D30)} (D+30)`, },
-              ].map(({ label }) => (
-                <span key={label} className="bg-white border border-teal/30 text-navy text-xs font-medium px-3 py-1.5 rounded-lg">
-                  {label}
-                </span>
+                { data: fmtPreview(revisoes.D1), tipo: 'D+1', descricao: 'Revisão rápida' },
+                { data: fmtPreview(revisoes.D7), tipo: 'D+7', descricao: 'Resolução de questões' },
+                { data: fmtPreview(revisoes.D30), tipo: 'D+30', descricao: 'Flash-cards' },
+              ].map(({ data, tipo, descricao }) => (
+                <div key={tipo} className="flex items-center justify-between bg-white border border-teal/30 rounded-lg px-3 py-2.5">
+                  <div className="flex items-center gap-2.5">
+                    <span className="bg-gradient-to-r from-navy to-teal text-white font-condensed text-xs font-bold px-2 py-0.5 rounded-md">{tipo}</span>
+                    <span className="text-sm text-gray-500">{descricao}</span>
+                  </div>
+                  <span className="text-xs font-medium text-navy">{data}</span>
+                </div>
               ))}
             </div>
           </div>

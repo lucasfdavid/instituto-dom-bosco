@@ -79,14 +79,14 @@ create policy "Usuário vê próprio perfil"
   on public.profiles for select
   using (auth.uid() = id);
 
-create policy "Professor vê perfis dos seus alunos"
+create policy "Professor vê todos os alunos"
   on public.profiles for select
   using (
     exists (
-      select 1 from public.professor_aluno pa
-      where pa.professor_id = auth.uid()
-      and pa.aluno_id = profiles.id
+      select 1 from public.profiles p
+      where p.id = auth.uid() and p.role = 'professor'
     )
+    and profiles.role = 'aluno'
   );
 
 -- Conteúdos: aluno vê/cria os próprios; professor vê dos seus alunos
