@@ -49,9 +49,11 @@ export default function AlunoDetalhe({ params }: { params: { id: string } }) {
   async function salvarComentario(revisaoId: string) {
     setSalvando(s => ({ ...s, [revisaoId]: true }))
     const supabase = createClient()
-    await supabase.from('revisoes')
+    const { error } = await supabase.from('revisoes')
       .update({ teacher_comment: comentarios[revisaoId] ?? '' })
       .eq('id', revisaoId)
+    if (error) alert('Erro: ' + error.message)
+    else alert('Salvo com sucesso!')
     setSalvando(s => ({ ...s, [revisaoId]: false }))
   }
 
