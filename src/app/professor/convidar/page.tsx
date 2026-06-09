@@ -20,8 +20,7 @@ export default function ConvidarProfessor() {
     const supabase = createClient()
     const { data: { session } } = await supabase.auth.getSession()
 
-    const response = await fetch(
-      `https://wttnzuqfnjxgswntbegs.supabase.co/functions/v1/convidar-professor`,
+    const response = await fetch('/api/convidar-professor',
       {
         method: 'POST',
         headers: {
