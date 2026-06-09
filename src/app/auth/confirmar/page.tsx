@@ -14,22 +14,29 @@ export default function ConfirmarPage() {
 
   useEffect(() => {
     const supabase = createClient()
-    
-    // Processa o token da URL
-    supabase.auth.onAuthStateChange(async (event, session) => {
-      if (event === 'SIGNED_IN' && session?.user) {
-        setEmail(session.user.email ?? '')
-        setPronto(true)
-      }
-    })
 
-    // Verifica sessão atual
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      if (session?.user) {
-        setEmail(session.user.email ?? '')
-        setPronto(true)
-      }
-    })
+    const hashParams = new URLSearchParams(window.location.hash.substring(1))
+    const accessToken = hashParams.get('access_token')
+    const refreshToken = hashParams.get('refresh_token')
+
+    if (accessToken && refreshToken) {
+      supabase.auth.setSession({
+        access_token: accessToken,
+        refresh_token: refreshToken,
+      }).then(({ data: { session } }) => {
+        if (session?.user) {
+          setEmail(session.user.email ?? '')
+          setPronto(true)
+        }
+      })
+    } else {
+      supabase.auth.getSession().then(({ data: { session } }) => {
+        if (session?.user) {
+          setEmail(session.user.email ?? '')
+          setPronto(true)
+        }
+      })
+    }
   }, [])
 
   async function handleDefinirSenha(e: React.FormEvent) {
