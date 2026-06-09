@@ -1,3 +1,6 @@
 {
-  "/auth/login/page": "app/auth/login/page.js"
+  "/auth/login/page": "app/auth/login/page.js",
+  "/aluno/page": "app/aluno/page.js",
+  "/aluno/registrar/page": "app/aluno/registrar/page.js",
+  "/professor/aluno/[id]/page": "app/professor/aluno/[id]/page.js"
 }

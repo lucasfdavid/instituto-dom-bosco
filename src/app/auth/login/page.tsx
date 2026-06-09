@@ -166,7 +166,7 @@ export default function LoginPage() {
         <div className="flex-1 p-8 md:p-10 flex flex-col justify-center overflow-y-auto max-h-screen">
 
           {/* Logo mobile */}
-          <div className="md:hidden mb-6">
+          <div className="md:hidden mb-6 flex justify-center w-full">
             <img src="/images/logo-azul.png" alt="Instituto Dom Bosco" className="h-16 w-auto object-contain" />
           </div>
 
