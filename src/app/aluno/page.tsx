@@ -218,8 +218,6 @@ export default function AlunoHome() {
         <p className="text-gray-400 mt-1 capitalize">{diaSemana}</p>
       </div>
 
-      {/* Seletor pendentes/concluídas */}
-      <div className="flex gap-2 mb-6 bg-gray-100 p-1 rounded-xl">
         <button
           onClick={() => setAba('pendentes')}
           className={`flex-1 py-2.5 rounded-lg text-sm font-semibold transition-all ${aba === 'pendentes' ? 'bg-white text-navy shadow-sm' : 'text-gray-400 hover:text-navy'}`}
@@ -233,6 +231,9 @@ export default function AlunoHome() {
           Concluídas
         </button>
       </div>
+
+    {/* Seletor pendentes/concluídas */}
+      <div className="flex gap-2 mb-6 bg-gray-100 p-1 rounded-xl">
 
       {/* Stats */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-8">
