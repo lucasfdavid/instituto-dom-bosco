@@ -1,7 +1,7 @@
 'use client'
 
 import Link from 'next/link'
-import { BookOpen, ChevronRight } from 'lucide-react'
+import { BookOpen, ChevronRight, UserPlus } from 'lucide-react'
 
 const configuracoes = [
   {
