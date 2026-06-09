@@ -3,7 +3,7 @@
 import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
-import { Clock, AlertCircle, Bell, BookOpen, CheckCircle2, RotateCcw } from 'lucide-react'
+import { Clock, AlertCircle, Bell, BookOpen, CheckCircle2, RotateCcw, X, MessageSquare } from 'lucide-react'
 import { hoje, formatarData, formatarDataCurta } from '@/lib/utils'
 import { format, parseISO } from 'date-fns'
 import { ptBR } from 'date-fns/locale'
@@ -16,6 +16,7 @@ export default function AlunoHome() {
   const [revisoesAtrasadas, setRevisoesAtrasadas] = useState<any[]>([])
   const [proximasRevisoes, setProximasRevisoes] = useState<any[]>([])
   const [totalEstudos, setTotalEstudos] = useState(0)
+  const [revisaoSelecionada, setRevisaoSelecionada] = useState<any>(null)
 
   async function loadData() {
     const supabase = createClient()
@@ -70,13 +71,15 @@ export default function AlunoHome() {
   async function marcarConcluida(id: string) {
     const supabase = createClient()
     await supabase.from('revisoes').update({ status: 'completed', concluida: true, concluida_em: new Date().toISOString() }).eq('id', id)
+    setRevisaoSelecionada(null)
     loadData()
   }
 
-  async function remarcar(id: string, dataAtual: string) {
+  async function remarcar(id: string) {
     const supabase = createClient()
     const novaData = format(new Date(), 'yyyy-MM-dd')
     await supabase.from('revisoes').update({ status: 'rescheduled', data_revisao: novaData }).eq('id', id)
+    setRevisaoSelecionada(null)
     loadData()
   }
 
@@ -90,10 +93,10 @@ export default function AlunoHome() {
   const diaSemana = format(parseISO(dataHoje), "EEEE, dd 'de' MMMM", { locale: ptBR })
 
   const stats = [
-    { icon: Clock, label: 'Para revisar hoje', value: revisoesHoje.length, color: 'text-yellow-500', bg: 'bg-yellow-50' },
-    { icon: AlertCircle, label: 'Atrasadas', value: revisoesAtrasadas.length, color: 'text-red-500', bg: 'bg-red-50' },
-    { icon: Bell, label: 'Próx. 7 dias', value: proximasRevisoes.length, color: 'text-purple-500', bg: 'bg-purple-50' },
-    { icon: BookOpen, label: 'Estudos registrados', value: totalEstudos, color: 'text-teal', bg: 'bg-teal-light' },
+    { icon: Clock, label: 'Para revisar hoje', value: revisoesHoje.length, color: 'text-yellow-500' },
+    { icon: AlertCircle, label: 'Atrasadas', value: revisoesAtrasadas.length, color: 'text-red-500' },
+    { icon: Bell, label: 'Próx. 7 dias', value: proximasRevisoes.length, color: 'text-purple-500' },
+    { icon: BookOpen, label: 'Estudos registrados', value: totalEstudos, color: 'text-teal' },
   ]
 
   const badgeLabel: Record<string, string> = { D1: 'Revisão D+1', D7: 'Revisão D+7', D30: 'Revisão D+30' }
@@ -101,7 +104,10 @@ export default function AlunoHome() {
   function RevCard({ r, showActions = true }: { r: any, showActions?: boolean }) {
     const atrasada = r.data_revisao < dataHoje
     return (
-      <div className="bg-white rounded-2xl p-4 border border-gray-200 shadow-sm">
+      <div
+        className="bg-white rounded-2xl p-4 border border-gray-200 shadow-sm cursor-pointer hover:shadow-md transition-all"
+        onClick={() => setRevisaoSelecionada(r)}
+      >
         <div className="flex items-center justify-between mb-2">
           <div className="flex items-center gap-2 flex-wrap">
             <span className="bg-purple-100 text-purple-700 font-condensed text-xs font-bold px-2.5 py-1 rounded-full uppercase">
@@ -119,21 +125,11 @@ export default function AlunoHome() {
           <span className="text-xs text-gray-400">Prevista: {formatarDataCurta(r.data_revisao)}</span>
         </div>
         <p className="font-semibold text-navy text-base mb-1">{r.conteudo?.assunto}</p>
-        {r.conteudo?.descricao && <p className="text-sm text-gray-500 mb-3">{r.conteudo.descricao}</p>}
-        {showActions && (
-          <div className="flex gap-2 mt-3">
-            <button
-              onClick={() => marcarConcluida(r.id)}
-              className="flex items-center gap-1.5 px-4 py-2 bg-teal text-white rounded-xl text-sm font-semibold hover:opacity-90 transition-opacity"
-            >
-              <CheckCircle2 size={15} /> Marcar concluída
-            </button>
-            <button
-              onClick={() => remarcar(r.id, r.data_revisao)}
-              className="flex items-center gap-1.5 px-4 py-2 bg-gray-100 text-gray-600 rounded-xl text-sm font-semibold hover:bg-gray-200 transition-colors"
-            >
-              <RotateCcw size={15} /> Remarcar
-            </button>
+        {r.conteudo?.descricao && <p className="text-sm text-gray-500 mb-1">{r.conteudo.descricao}</p>}
+        {r.teacher_comment && (
+          <div className="flex items-center gap-1.5 mt-2">
+            <MessageSquare size={12} className="text-teal" />
+            <p className="text-xs text-teal font-medium">Observação do professor</p>
           </div>
         )}
       </div>
@@ -142,6 +138,62 @@ export default function AlunoHome() {
 
   return (
     <div className="p-6 max-w-4xl">
+      {/* Modal de detalhe da revisão */}
+      {revisaoSelecionada && (
+        <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
+          <div className="bg-white rounded-2xl p-6 w-full max-w-md shadow-xl">
+            <div className="flex items-center justify-between mb-4">
+              <div className="flex items-center gap-2">
+                <span className="bg-purple-100 text-purple-700 font-condensed text-xs font-bold px-2.5 py-1 rounded-full uppercase">
+                  {revisaoSelecionada.conteudo?.materia}
+                </span>
+                <span className="bg-blue-100 text-blue-700 font-condensed text-xs font-bold px-2.5 py-1 rounded-full uppercase">
+                  {badgeLabel[revisaoSelecionada.tipo]}
+                </span>
+              </div>
+              <button onClick={() => setRevisaoSelecionada(null)} className="text-gray-400 hover:text-navy">
+                <X size={20} />
+              </button>
+            </div>
+
+            <h3 className="font-serif text-xl font-bold text-navy mb-1">{revisaoSelecionada.conteudo?.assunto}</h3>
+            <p className="text-xs text-gray-400 mb-4">Prevista: {formatarDataCurta(revisaoSelecionada.data_revisao)}</p>
+
+            {revisaoSelecionada.conteudo?.descricao && (
+              <div className="bg-gray-50 rounded-xl p-3 mb-4">
+                <p className="text-xs font-semibold text-gray-400 uppercase tracking-wide mb-1">Descrição</p>
+                <p className="text-sm text-navy">{revisaoSelecionada.conteudo.descricao}</p>
+              </div>
+            )}
+
+            {revisaoSelecionada.teacher_comment && (
+              <div className="bg-teal-light border border-teal/20 rounded-xl p-3 mb-4">
+                <div className="flex items-center gap-1.5 mb-1">
+                  <MessageSquare size={13} className="text-teal" />
+                  <p className="text-xs font-semibold text-teal uppercase tracking-wide">Observação do professor</p>
+                </div>
+                <p className="text-sm text-navy">{revisaoSelecionada.teacher_comment}</p>
+              </div>
+            )}
+
+            <div className="flex gap-2 mt-4">
+              <button
+                onClick={() => marcarConcluida(revisaoSelecionada.id)}
+                className="flex-1 flex items-center justify-center gap-1.5 px-4 py-2.5 bg-teal text-white rounded-xl text-sm font-semibold"
+              >
+                <CheckCircle2 size={15} /> Marcar concluída
+              </button>
+              <button
+                onClick={() => remarcar(revisaoSelecionada.id)}
+                className="flex items-center justify-center gap-1.5 px-4 py-2.5 bg-gray-100 text-gray-600 rounded-xl text-sm font-semibold"
+              >
+                <RotateCcw size={15} /> Remarcar
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* Header */}
       <div className="mb-6">
         <h1 className="font-serif text-3xl font-bold text-navy">Olá, {nome}! 👋</h1>
@@ -150,7 +202,7 @@ export default function AlunoHome() {
 
       {/* Stats */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-8">
-        {stats.map(({ icon: Icon, label, value, color, bg }) => (
+        {stats.map(({ icon: Icon, label, value, color }) => (
           <div key={label} className="bg-white rounded-2xl p-4 border border-gray-200 shadow-sm">
             <div className="flex items-center gap-2 mb-2">
               <Icon size={18} className={color} />
