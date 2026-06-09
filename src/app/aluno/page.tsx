@@ -286,11 +286,11 @@ export default function AlunoHome() {
                 <CalendarDays size={20} className="text-purple-500" /> Esta semana
               </h2>
               {(() => {
-                const diasUnicos = [...new Set(
+                const diasUnicos = Array.from(new Set(
                   revisoesSemana
                     .filter(r => r.data_revisao > dataHoje)
                     .map(r => r.data_revisao)
-                )].sort()
+                )).sort()
                 return (
                   <div className="flex flex-col gap-6">
                     {diasUnicos.map(dia => {
