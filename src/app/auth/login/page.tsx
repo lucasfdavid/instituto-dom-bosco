@@ -167,7 +167,7 @@ export default function LoginPage() {
 
           {/* Logo mobile */}
           <div className="md:hidden mb-6">
-            <img src="/images/coluna-logo.png" alt="Instituto Dom Bosco" className="h-16 w-auto object-contain" />
+            <img src="/images/logo-azul.png" alt="Instituto Dom Bosco" className="h-16 w-auto object-contain" />
           </div>
 
           {/* Tabs login/cadastro */}
