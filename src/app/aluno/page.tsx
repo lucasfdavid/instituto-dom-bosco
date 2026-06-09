@@ -4,7 +4,7 @@ import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
 import { Clock, AlertCircle, Bell, BookOpen, CheckCircle2, RotateCcw, X, MessageSquare } from 'lucide-react'
-import { hoje, formatarData, formatarDataCurta } from '@/lib/utils'
+import { hoje, formatarDataCurta } from '@/lib/utils'
 import { format, parseISO } from 'date-fns'
 import { ptBR } from 'date-fns/locale'
 
@@ -15,8 +15,10 @@ export default function AlunoHome() {
   const [revisoesHoje, setRevisoesHoje] = useState<any[]>([])
   const [revisoesAtrasadas, setRevisoesAtrasadas] = useState<any[]>([])
   const [proximasRevisoes, setProximasRevisoes] = useState<any[]>([])
+  const [revisoesConcluidas, setRevisoesConcluidas] = useState<any[]>([])
   const [totalEstudos, setTotalEstudos] = useState(0)
   const [revisaoSelecionada, setRevisaoSelecionada] = useState<any>(null)
+  const [aba, setAba] = useState<'pendentes' | 'concluidas'>('pendentes')
 
   async function loadData() {
     const supabase = createClient()
@@ -54,6 +56,14 @@ export default function AlunoHome() {
       .order('data_revisao')
       .limit(3)
 
+    const { data: rConcluidas } = await supabase
+      .from('revisoes')
+      .select('*, conteudo:conteudos(*)')
+      .eq('aluno_id', session.user.id)
+      .eq('status', 'completed')
+      .order('concluida_em', { ascending: false })
+      .limit(20)
+
     const { data: conteudos } = await supabase
       .from('conteudos')
       .select('id')
@@ -62,6 +72,7 @@ export default function AlunoHome() {
     setRevisoesHoje(rHoje ?? [])
     setRevisoesAtrasadas(rAtrasadas ?? [])
     setProximasRevisoes(rProximas ?? [])
+    setRevisoesConcluidas(rConcluidas ?? [])
     setTotalEstudos(conteudos?.length ?? 0)
     setLoading(false)
   }
@@ -102,7 +113,7 @@ export default function AlunoHome() {
   const badgeLabel: Record<string, string> = { D1: 'Revisão D+1', D7: 'Revisão D+7', D30: 'Revisão D+30' }
 
   function RevCard({ r, showActions = true }: { r: any, showActions?: boolean }) {
-    const atrasada = r.data_revisao < dataHoje
+    const atrasada = r.data_revisao < dataHoje && r.status !== 'completed'
     return (
       <div
         className="bg-white rounded-2xl p-4 border border-gray-200 shadow-sm cursor-pointer hover:shadow-md transition-all"
@@ -116,6 +127,11 @@ export default function AlunoHome() {
             <span className="bg-blue-100 text-blue-700 font-condensed text-xs font-bold px-2.5 py-1 rounded-full uppercase">
               {badgeLabel[r.tipo]}
             </span>
+            {r.status === 'completed' && (
+              <span className="bg-teal-light text-teal font-condensed text-xs font-bold px-2.5 py-1 rounded-full uppercase">
+                ✓ Concluída
+              </span>
+            )}
             {atrasada && (
               <span className="bg-red-100 text-red-600 font-condensed text-xs font-bold px-2.5 py-1 rounded-full uppercase">
                 Atrasada
@@ -143,7 +159,7 @@ export default function AlunoHome() {
         <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
           <div className="bg-white rounded-2xl p-6 w-full max-w-md shadow-xl">
             <div className="flex items-center justify-between mb-4">
-              <div className="flex items-center gap-2">
+              <div className="flex items-center gap-2 flex-wrap">
                 <span className="bg-purple-100 text-purple-700 font-condensed text-xs font-bold px-2.5 py-1 rounded-full uppercase">
                   {revisaoSelecionada.conteudo?.materia}
                 </span>
@@ -176,20 +192,22 @@ export default function AlunoHome() {
               </div>
             )}
 
-            <div className="flex gap-2 mt-4">
-              <button
-                onClick={() => marcarConcluida(revisaoSelecionada.id)}
-                className="flex-1 flex items-center justify-center gap-1.5 px-4 py-2.5 bg-teal text-white rounded-xl text-sm font-semibold"
-              >
-                <CheckCircle2 size={15} /> Marcar concluída
-              </button>
-              <button
-                onClick={() => remarcar(revisaoSelecionada.id)}
-                className="flex items-center justify-center gap-1.5 px-4 py-2.5 bg-gray-100 text-gray-600 rounded-xl text-sm font-semibold"
-              >
-                <RotateCcw size={15} /> Remarcar
-              </button>
-            </div>
+            {revisaoSelecionada.status !== 'completed' && (
+              <div className="flex gap-2 mt-4">
+                <button
+                  onClick={() => marcarConcluida(revisaoSelecionada.id)}
+                  className="flex-1 flex items-center justify-center gap-1.5 px-4 py-2.5 bg-teal text-white rounded-xl text-sm font-semibold"
+                >
+                  <CheckCircle2 size={15} /> Marcar concluída
+                </button>
+                <button
+                  onClick={() => remarcar(revisaoSelecionada.id)}
+                  className="flex items-center justify-center gap-1.5 px-4 py-2.5 bg-gray-100 text-gray-600 rounded-xl text-sm font-semibold"
+                >
+                  <RotateCcw size={15} /> Remarcar
+                </button>
+              </div>
+            )}
           </div>
         </div>
       )}
@@ -198,6 +216,22 @@ export default function AlunoHome() {
       <div className="mb-6">
         <h1 className="font-serif text-3xl font-bold text-navy">Olá, {nome}! 👋</h1>
         <p className="text-gray-400 mt-1 capitalize">{diaSemana}</p>
+      </div>
+
+      {/* Seletor pendentes/concluídas */}
+      <div className="flex gap-2 mb-6 bg-gray-100 p-1 rounded-xl">
+        <button
+          onClick={() => setAba('pendentes')}
+          className={`flex-1 py-2.5 rounded-lg text-sm font-semibold transition-all ${aba === 'pendentes' ? 'bg-white text-navy shadow-sm' : 'text-gray-400 hover:text-navy'}`}
+        >
+          Pendentes
+        </button>
+        <button
+          onClick={() => setAba('concluidas')}
+          className={`flex-1 py-2.5 rounded-lg text-sm font-semibold transition-all ${aba === 'concluidas' ? 'bg-white text-navy shadow-sm' : 'text-gray-400 hover:text-navy'}`}
+        >
+          Concluídas
+        </button>
       </div>
 
       {/* Stats */}
@@ -213,45 +247,63 @@ export default function AlunoHome() {
         ))}
       </div>
 
-      {/* Revisões de hoje */}
-      <div className="mb-8">
-        <h2 className="font-serif text-xl font-semibold text-navy flex items-center gap-2 mb-4">
-          <Clock size={20} className="text-yellow-500" /> Revisões de hoje
-        </h2>
-        {revisoesHoje.length > 0 ? (
-          <div className="flex flex-col gap-3">
-            {revisoesHoje.map(r => <RevCard key={r.id} r={r} />)}
+      {aba === 'pendentes' ? (
+        <>
+          {/* Revisões de hoje */}
+          <div className="mb-8">
+            <h2 className="font-serif text-xl font-semibold text-navy flex items-center gap-2 mb-4">
+              <Clock size={20} className="text-yellow-500" /> Revisões de hoje
+            </h2>
+            {revisoesHoje.length > 0 ? (
+              <div className="flex flex-col gap-3">
+                {revisoesHoje.map(r => <RevCard key={r.id} r={r} />)}
+              </div>
+            ) : (
+              <div className="bg-white rounded-2xl p-8 border border-dashed border-gray-200 text-center">
+                <CheckCircle2 size={40} className="text-teal mx-auto mb-3" />
+                <p className="font-semibold text-navy">Tudo em dia! 🎉</p>
+                <p className="text-sm text-gray-400 mt-1">Você não tem revisões para hoje.</p>
+              </div>
+            )}
           </div>
-        ) : (
-          <div className="bg-white rounded-2xl p-8 border border-dashed border-gray-200 text-center">
-            <CheckCircle2 size={40} className="text-teal mx-auto mb-3" />
-            <p className="font-semibold text-navy">Tudo em dia! 🎉</p>
-            <p className="text-sm text-gray-400 mt-1">Você não tem revisões para hoje. Continue registrando seus estudos!</p>
-          </div>
-        )}
-      </div>
 
-      {/* Revisões atrasadas */}
-      {revisoesAtrasadas.length > 0 && (
-        <div className="mb-8">
-          <h2 className="font-serif text-xl font-semibold text-navy flex items-center gap-2 mb-4">
-            <AlertCircle size={20} className="text-red-500" /> Revisões atrasadas
-          </h2>
-          <div className="flex flex-col gap-3">
-            {revisoesAtrasadas.map(r => <RevCard key={r.id} r={r} />)}
-          </div>
-        </div>
-      )}
+          {revisoesAtrasadas.length > 0 && (
+            <div className="mb-8">
+              <h2 className="font-serif text-xl font-semibold text-navy flex items-center gap-2 mb-4">
+                <AlertCircle size={20} className="text-red-500" /> Revisões atrasadas
+              </h2>
+              <div className="flex flex-col gap-3">
+                {revisoesAtrasadas.map(r => <RevCard key={r.id} r={r} />)}
+              </div>
+            </div>
+          )}
 
-      {/* Próximas revisões */}
-      {proximasRevisoes.length > 0 && (
+          {proximasRevisoes.length > 0 && (
+            <div>
+              <h2 className="font-serif text-xl font-semibold text-navy flex items-center gap-2 mb-4">
+                <Bell size={20} className="text-purple-500" /> Próximas revisões
+              </h2>
+              <div className="flex flex-col gap-3">
+                {proximasRevisoes.map(r => <RevCard key={r.id} r={r} showActions={false} />)}
+              </div>
+            </div>
+          )}
+        </>
+      ) : (
         <div>
           <h2 className="font-serif text-xl font-semibold text-navy flex items-center gap-2 mb-4">
-            <Bell size={20} className="text-purple-500" /> Próximas revisões
+            <CheckCircle2 size={20} className="text-teal" /> Revisões concluídas
           </h2>
-          <div className="flex flex-col gap-3">
-            {proximasRevisoes.map(r => <RevCard key={r.id} r={r} showActions={false} />)}
-          </div>
+          {revisoesConcluidas.length > 0 ? (
+            <div className="flex flex-col gap-3">
+              {revisoesConcluidas.map(r => <RevCard key={r.id} r={r} showActions={false} />)}
+            </div>
+          ) : (
+            <div className="bg-white rounded-2xl p-8 border border-dashed border-gray-200 text-center">
+              <p className="text-2xl mb-2">📚</p>
+              <p className="text-sm text-gray-400">Nenhuma revisão concluída ainda.</p>
+            </div>
+          )}
         </div>
       )}
     </div>
