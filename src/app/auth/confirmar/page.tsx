@@ -64,13 +64,12 @@ export default function ConfirmarPage() {
     }
 
     const { data: { user } } = await supabase.auth.getUser()
-    const { data: profile } = await supabase
-      .from('profiles')
-      .select('role')
-      .eq('id', user!.id)
-      .single()
 
-    if (profile?.role === 'professor') {
+    // Garante que o role do perfil reflete os metadados do convite
+    const roleDoConvite = user?.user_metadata?.role ?? 'aluno'
+    await supabase.from('profiles').update({ role: roleDoConvite }).eq('id', user!.id)
+
+    if (roleDoConvite === 'professor') {
       window.location.href = '/professor'
     } else {
       window.location.href = '/aluno'
