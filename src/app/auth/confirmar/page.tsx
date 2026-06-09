@@ -1,23 +1,32 @@
 'use client'
 
 import { useState, useEffect } from 'react'
-import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
-import { Lock } from 'lucide-react'
+import { Lock, Mail } from 'lucide-react'
 
 export default function ConfirmarPage() {
-  const router = useRouter()
   const [senha, setSenha] = useState('')
   const [confirmar, setConfirmar] = useState('')
+  const [email, setEmail] = useState('')
   const [loading, setLoading] = useState(false)
   const [erro, setErro] = useState('')
   const [pronto, setPronto] = useState(false)
 
   useEffect(() => {
-    // Supabase processa o token automaticamente via URL hash
     const supabase = createClient()
-    supabase.auth.onAuthStateChange((event) => {
-      if (event === 'PASSWORD_RECOVERY' || event === 'SIGNED_IN') {
+    
+    // Processa o token da URL
+    supabase.auth.onAuthStateChange(async (event, session) => {
+      if (event === 'SIGNED_IN' && session?.user) {
+        setEmail(session.user.email ?? '')
+        setPronto(true)
+      }
+    })
+
+    // Verifica sessão atual
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      if (session?.user) {
+        setEmail(session.user.email ?? '')
         setPronto(true)
       }
     })
@@ -47,7 +56,6 @@ export default function ConfirmarPage() {
       return
     }
 
-    // Redireciona para o painel correto
     const { data: { user } } = await supabase.auth.getUser()
     const { data: profile } = await supabase
       .from('profiles')
@@ -80,7 +88,20 @@ export default function ConfirmarPage() {
 
         <form onSubmit={handleDefinirSenha} className="flex flex-col gap-4">
           <div>
-            <label className="block text-sm font-semibold text-navy mb-2">Nova senha</label>
+            <label className="block text-sm font-semibold text-navy mb-2">E-mail</label>
+            <div className="relative">
+              <Mail size={16} className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400" />
+              <input
+                type="email"
+                value={email}
+                disabled
+                className="w-full pl-10 pr-4 py-3 rounded-xl border border-gray-200 bg-gray-100 text-gray-400 text-sm cursor-not-allowed"
+              />
+            </div>
+          </div>
+
+          <div>
+            <label className="block text-sm font-semibold text-navy mb-2">Criar senha</label>
             <div className="relative">
               <Lock size={16} className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400" />
               <input
