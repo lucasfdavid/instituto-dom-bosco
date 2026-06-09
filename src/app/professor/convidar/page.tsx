@@ -21,7 +21,7 @@ export default function ConvidarProfessor() {
     const { data: { session } } = await supabase.auth.getSession()
 
     const response = await fetch(
-      `${process.env.NEXT_PUBLIC_SUPABASE_URL}/functions/v1/convidar-professor`,
+      `https://wttnzuqfnjxgswntbegs.supabase.co/functions/v1/convidar-professor`,
       {
         method: 'POST',
         headers: {
