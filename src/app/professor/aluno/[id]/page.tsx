@@ -1,25 +1,30 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { useEffect, useState, useRef } from 'react'
 import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
 import Link from 'next/link'
 import { formatarDataCurta } from '@/lib/utils'
-import { CheckCircle2, MessageSquare, ChevronDown, ChevronUp } from 'lucide-react'
+import { CheckCircle2, ChevronDown, ChevronUp, Send } from 'lucide-react'
+import { format, parseISO } from 'date-fns'
 
 export default function AlunoDetalhe({ params }: { params: { id: string } }) {
   const router = useRouter()
   const [loading, setLoading] = useState(true)
+  const [userId, setUserId] = useState<string>('')
   const [profile, setProfile] = useState<any>(null)
   const [conteudos, setConteudos] = useState<any[]>([])
-  const [comentarios, setComentarios] = useState<Record<string, string>>({})
-  const [salvando, setSalvando] = useState<Record<string, boolean>>({})
   const [expandido, setExpandido] = useState<Record<string, boolean>>({})
+  const [comentariosPorRevisao, setComentariosPorRevisao] = useState<Record<string, any[]>>({})
+  const [textoNovo, setTextoNovo] = useState<Record<string, string>>({})
+  const [enviando, setEnviando] = useState<string | null>(null)
+  const chatRefs = useRef<Record<string, HTMLDivElement | null>>({})
 
   async function loadData() {
     const supabase = createClient()
     const { data: { session } } = await supabase.auth.getSession()
     if (!session) { router.push('/auth/login'); return }
+    setUserId(session.user.id)
 
     const { data: p } = await supabase
       .from('profiles').select('*').eq('id', params.id).single()
@@ -32,30 +37,54 @@ export default function AlunoDetalhe({ params }: { params: { id: string } }) {
 
     setProfile(p)
     setConteudos(c ?? [])
-
-    // Pré-carregar comentários existentes
-    const comentariosIniciais: Record<string, string> = {}
-    c?.forEach(conteudo => {
-      conteudo.revisoes?.forEach((r: any) => {
-        if (r.teacher_comment) comentariosIniciais[r.id] = r.teacher_comment
-      })
-    })
-    setComentarios(comentariosIniciais)
     setLoading(false)
   }
 
-  useEffect(() => { loadData() }, [])
-
-  async function salvarComentario(revisaoId: string) {
-    setSalvando(s => ({ ...s, [revisaoId]: true }))
+  async function loadComentarios(revisaoId: string) {
     const supabase = createClient()
-    const { error } = await supabase.from('revisoes')
-      .update({ teacher_comment: comentarios[revisaoId] ?? '' })
-      .eq('id', revisaoId)
-    if (error) alert('Erro: ' + error.message)
-    else alert('Salvo com sucesso!')
-    setSalvando(s => ({ ...s, [revisaoId]: false }))
+    const { data } = await supabase
+      .from('comentarios')
+      .select('*, autor:profiles(nome, role)')
+      .eq('revisao_id', revisaoId)
+      .order('criado_em')
+    setComentariosPorRevisao(prev => ({ ...prev, [revisaoId]: data ?? [] }))
   }
+
+  async function toggleExpandirConteudo(conteudoId: string, revisoes: any[]) {
+    const novoEstado = !expandido[conteudoId]
+    setExpandido(e => ({ ...e, [conteudoId]: novoEstado }))
+    if (novoEstado) {
+      await Promise.all(revisoes.map((r: any) => loadComentarios(r.id)))
+      revisoes.forEach((r: any) => {
+        setTimeout(() => {
+          const el = chatRefs.current[r.id]
+          if (el) el.scrollTop = el.scrollHeight
+        }, 100)
+      })
+    }
+  }
+
+  async function enviarComentario(revisaoId: string) {
+    const texto = textoNovo[revisaoId]?.trim()
+    if (!texto) return
+    setEnviando(revisaoId)
+    const supabase = createClient()
+    await supabase.from('comentarios').insert({
+      revisao_id: revisaoId,
+      autor_id: userId,
+      role: 'professor',
+      texto,
+    })
+    setTextoNovo(prev => ({ ...prev, [revisaoId]: '' }))
+    await loadComentarios(revisaoId)
+    setEnviando(null)
+    setTimeout(() => {
+      const el = chatRefs.current[revisaoId]
+      if (el) el.scrollTop = el.scrollHeight
+    }, 100)
+  }
+
+  useEffect(() => { loadData() }, [])
 
   if (loading) return (
     <div className="min-h-screen flex items-center justify-center">
@@ -114,9 +143,8 @@ export default function AlunoDetalhe({ params }: { params: { id: string } }) {
           const aberto = expandido[c.id]
           return (
             <div key={c.id} className="bg-white rounded-2xl border border-gray-200 shadow-sm overflow-hidden">
-              {/* Header do conteúdo */}
               <button
-                onClick={() => setExpandido(e => ({ ...e, [c.id]: !e[c.id] }))}
+                onClick={() => toggleExpandirConteudo(c.id, c.revisoes ?? [])}
                 className="w-full flex items-center justify-between p-4 hover:bg-gray-50 transition-colors"
               >
                 <div className="flex items-center gap-3 text-left">
@@ -131,56 +159,78 @@ export default function AlunoDetalhe({ params }: { params: { id: string } }) {
                 {aberto ? <ChevronUp size={16} className="text-gray-400" /> : <ChevronDown size={16} className="text-gray-400" />}
               </button>
 
-              {/* Revisões expandidas */}
               {aberto && (
                 <div className="border-t border-gray-100 p-4 flex flex-col gap-4">
-                  {(c.revisoes ?? []).map((r: any) => (
-                    <div key={r.id} className={`rounded-xl p-4 border ${r.status === 'completed' ? 'bg-teal-light border-teal/20' : 'bg-gray-50 border-gray-200'}`}>
-                      <div className="flex items-center justify-between mb-2">
-                        <div className="flex items-center gap-2">
-                          <span className="font-condensed text-xs font-bold text-navy uppercase">
-                            Revisão {r.tipo}
-                          </span>
-                          {r.status === 'completed' && (
-                            <CheckCircle2 size={14} className="text-teal" />
-                          )}
+                  {(c.revisoes ?? []).sort((a: any, b: any) => a.tipo.localeCompare(b.tipo)).map((r: any) => {
+                    const comentarios = comentariosPorRevisao[r.id] ?? []
+                    return (
+                      <div key={r.id} className={`rounded-xl border overflow-hidden ${r.status === 'completed' ? 'bg-teal-light border-teal/20' : 'bg-gray-50 border-gray-200'}`}>
+                        {/* Cabeçalho da revisão */}
+                        <div className="flex items-center justify-between px-4 py-2.5">
+                          <div className="flex items-center gap-2">
+                            <span className="font-condensed text-xs font-bold text-navy uppercase">Revisão {r.tipo}</span>
+                            {r.status === 'completed' && <CheckCircle2 size={13} className="text-teal" />}
+                          </div>
+                          <div className="flex items-center gap-3">
+                            <span className={`text-xs font-semibold ${
+                              r.status === 'completed' ? 'text-teal' :
+                              r.status === 'rescheduled' ? 'text-yellow-600' : 'text-gray-400'
+                            }`}>
+                              {r.status === 'completed' ? '✓ Concluída' : r.status === 'rescheduled' ? '↻ Remarcada' : '○ Pendente'}
+                            </span>
+                            <span className="text-xs text-gray-400">{formatarDataCurta(r.data_revisao)}</span>
+                          </div>
                         </div>
-                        <span className="text-xs text-gray-400">{formatarDataCurta(r.data_revisao)}</span>
-                      </div>
 
-                      {/* Status */}
-                      <p className={`text-xs font-semibold mb-3 ${
-                        r.status === 'completed' ? 'text-teal' :
-                        r.status === 'rescheduled' ? 'text-yellow-600' :
-                        'text-gray-400'
-                      }`}>
-                        {r.status === 'completed' ? '✓ Concluída pelo aluno' :
-                         r.status === 'rescheduled' ? '↻ Remarcada' :
-                         '○ Pendente'}
-                      </p>
-
-                      {/* Comentário do professor */}
-                      <div>
-                        <label className="flex items-center gap-1.5 text-xs font-semibold text-navy mb-2">
-                          <MessageSquare size={12} /> Comentário do professor
-                        </label>
-                        <textarea
-                          value={comentarios[r.id] ?? ''}
-                          onChange={e => setComentarios(c => ({ ...c, [r.id]: e.target.value }))}
-                          placeholder="Adicione um comentário ou orientação para o aluno..."
-                          rows={2}
-                          className="w-full px-3 py-2 rounded-lg border border-gray-200 bg-white text-navy text-xs outline-none focus:border-teal resize-none transition-all"
-                        />
-                        <button
-                          onClick={() => salvarComentario(r.id)}
-                          disabled={salvando[r.id]}
-                          className="mt-2 px-4 py-1.5 bg-gradient-to-r from-navy to-teal text-white text-xs font-semibold rounded-lg disabled:opacity-60"
-                        >
-                          {salvando[r.id] ? 'Salvando...' : 'Salvar comentário'}
-                        </button>
+                        {/* Chat */}
+                        <div className="border-t border-gray-200 bg-white">
+                          <div
+                            ref={el => { chatRefs.current[r.id] = el }}
+                            className="flex flex-col gap-2 p-3 max-h-48 overflow-y-auto"
+                          >
+                            {comentarios.length === 0 ? (
+                              <p className="text-xs text-gray-400 text-center py-2">Nenhum comentário ainda.</p>
+                            ) : (
+                              comentarios.map((cm: any) => {
+                                const isMe = cm.autor_id === userId
+                                return (
+                                  <div key={cm.id} className={`flex flex-col max-w-[85%] ${isMe ? 'self-end items-end' : 'self-start items-start'}`}>
+                                    <span className="text-[10px] text-gray-400 mb-0.5 px-1">
+                                      {isMe ? 'Você' : cm.autor?.nome?.split(' ')[0]} · {format(parseISO(cm.criado_em), "dd/MM HH:mm")}
+                                    </span>
+                                    <div className={`px-3 py-2 rounded-2xl text-xs leading-relaxed ${
+                                      isMe
+                                        ? 'bg-gradient-to-br from-navy to-teal text-white rounded-tr-sm'
+                                        : 'bg-gray-100 text-navy rounded-tl-sm'
+                                    }`}>
+                                      {cm.texto}
+                                    </div>
+                                  </div>
+                                )
+                              })
+                            )}
+                          </div>
+                          <div className="flex gap-2 p-3 border-t border-gray-100">
+                            <input
+                              type="text"
+                              value={textoNovo[r.id] ?? ''}
+                              onChange={e => setTextoNovo(prev => ({ ...prev, [r.id]: e.target.value }))}
+                              onKeyDown={e => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); enviarComentario(r.id) } }}
+                              placeholder="Comentário ou orientação..."
+                              className="flex-1 text-xs px-3 py-2 rounded-xl border border-gray-200 outline-none focus:border-teal"
+                            />
+                            <button
+                              onClick={() => enviarComentario(r.id)}
+                              disabled={enviando === r.id || !textoNovo[r.id]?.trim()}
+                              className="p-2 bg-gradient-to-br from-navy to-teal text-white rounded-xl disabled:opacity-40"
+                            >
+                              <Send size={14} />
+                            </button>
+                          </div>
+                        </div>
                       </div>
-                    </div>
-                  ))}
+                    )
+                  })}
                 </div>
               )}
             </div>

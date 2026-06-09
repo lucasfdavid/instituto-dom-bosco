@@ -1,10 +1,10 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { useEffect, useState, useRef } from 'react'
 import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
 import { hoje } from '@/lib/utils'
-import { CheckCircle2, RotateCcw, ChevronDown, ChevronUp, MessageSquare, GraduationCap } from 'lucide-react'
+import { CheckCircle2, RotateCcw, ChevronDown, ChevronUp, Send } from 'lucide-react'
 import {
   format, startOfMonth, endOfMonth, eachDayOfInterval,
   getDay, isSameDay, isToday, parseISO, addMonths, subMonths
@@ -16,30 +16,73 @@ const DOW = ['Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sáb', 'Dom']
 export default function AlunoCalendario() {
   const router = useRouter()
   const [loading, setLoading] = useState(true)
+  const [userId, setUserId] = useState<string>('')
   const [revisoes, setRevisoes] = useState<any[]>([])
   const [current, setCurrent] = useState(new Date())
   const [selectedDate, setSelectedDate] = useState(new Date())
   const [expandedId, setExpandedId] = useState<string | null>(null)
-  const [obsTexts, setObsTexts] = useState<Record<string, string>>({})
-  const [savingObs, setSavingObs] = useState<string | null>(null)
+  const [comentariosPorRevisao, setComentariosPorRevisao] = useState<Record<string, any[]>>({})
+  const [textoNovo, setTextoNovo] = useState<Record<string, string>>({})
+  const [enviando, setEnviando] = useState<string | null>(null)
+  const chatRefs = useRef<Record<string, HTMLDivElement | null>>({})
 
   async function loadData() {
     const supabase = createClient()
     const { data: { session } } = await supabase.auth.getSession()
     if (!session) { router.push('/auth/login'); return }
+    setUserId(session.user.id)
+
     const { data } = await supabase
       .from('revisoes')
       .select('*, conteudo:conteudos(*)')
       .eq('aluno_id', session.user.id)
       .order('data_revisao')
     setRevisoes(data ?? [])
-    const textos: Record<string, string> = {}
-    ;(data ?? []).forEach((r: any) => { if (r.obs_aluno) textos[r.id] = r.obs_aluno })
-    setObsTexts(textos)
     setLoading(false)
   }
 
-  useEffect(() => { loadData() }, [])
+  async function loadComentarios(revisaoId: string) {
+    const supabase = createClient()
+    const { data } = await supabase
+      .from('comentarios')
+      .select('*, autor:profiles(nome, role)')
+      .eq('revisao_id', revisaoId)
+      .order('criado_em')
+    setComentariosPorRevisao(prev => ({ ...prev, [revisaoId]: data ?? [] }))
+  }
+
+  async function toggleExpand(revisaoId: string) {
+    if (expandedId === revisaoId) {
+      setExpandedId(null)
+    } else {
+      setExpandedId(revisaoId)
+      await loadComentarios(revisaoId)
+      setTimeout(() => {
+        const el = chatRefs.current[revisaoId]
+        if (el) el.scrollTop = el.scrollHeight
+      }, 100)
+    }
+  }
+
+  async function enviarComentario(revisaoId: string) {
+    const texto = textoNovo[revisaoId]?.trim()
+    if (!texto) return
+    setEnviando(revisaoId)
+    const supabase = createClient()
+    await supabase.from('comentarios').insert({
+      revisao_id: revisaoId,
+      autor_id: userId,
+      role: 'aluno',
+      texto,
+    })
+    setTextoNovo(prev => ({ ...prev, [revisaoId]: '' }))
+    await loadComentarios(revisaoId)
+    setEnviando(null)
+    setTimeout(() => {
+      const el = chatRefs.current[revisaoId]
+      if (el) el.scrollTop = el.scrollHeight
+    }, 100)
+  }
 
   async function marcarConcluida(id: string) {
     const supabase = createClient()
@@ -53,12 +96,7 @@ export default function AlunoCalendario() {
     loadData()
   }
 
-  async function salvarObsAluno(id: string) {
-    setSavingObs(id)
-    const supabase = createClient()
-    await supabase.from('revisoes').update({ obs_aluno: obsTexts[id] ?? '' }).eq('id', id)
-    setSavingObs(null)
-  }
+  useEffect(() => { loadData() }, [])
 
   if (loading) return (
     <div className="min-h-screen flex items-center justify-center">
@@ -85,6 +123,7 @@ export default function AlunoCalendario() {
         <h1 className="font-serif text-3xl font-bold text-navy">Calendário</h1>
       </div>
       <div className="grid md:grid-cols-2 gap-4">
+        {/* Calendário */}
         <div className="bg-white rounded-2xl p-5 border border-gray-200 shadow-sm">
           <div className="flex items-center justify-between mb-4">
             <button onClick={() => setCurrent(subMonths(current, 1))} className="w-8 h-8 flex items-center justify-center rounded-lg border border-gray-200 text-navy hover:bg-gray-50">←</button>
@@ -126,6 +165,8 @@ export default function AlunoCalendario() {
             })}
           </div>
         </div>
+
+        {/* Revisões do dia */}
         <div className="bg-white rounded-2xl p-5 border border-gray-200 shadow-sm">
           <h3 className="font-serif text-sm font-semibold text-navy mb-1 capitalize whitespace-nowrap">{selectedLabel}</h3>
           <p className="font-condensed text-[10px] uppercase tracking-widest text-gray-400 mb-4">Revisões</p>
@@ -135,6 +176,7 @@ export default function AlunoCalendario() {
             <div className="flex flex-col gap-3">
               {revisoesSelected.map(r => {
                 const isExpanded = expandedId === r.id
+                const comentarios = comentariosPorRevisao[r.id] ?? []
                 return (
                   <div key={r.id} className={`rounded-xl border overflow-hidden ${r.status === 'completed' ? 'border-teal/20 bg-teal-light' : 'border-gray-200 bg-gray-50'}`}>
                     <div className="p-3">
@@ -144,7 +186,7 @@ export default function AlunoCalendario() {
                           <p className="text-xs text-gray-400 mb-2">{r.conteudo?.materia} · {r.tipo}</p>
                         </div>
                         <button
-                          onClick={() => setExpandedId(isExpanded ? null : r.id)}
+                          onClick={() => toggleExpand(r.id)}
                           className="text-gray-400 hover:text-navy shrink-0 mt-0.5"
                         >
                           {isExpanded ? <ChevronUp size={16} /> : <ChevronDown size={16} />}
@@ -163,35 +205,55 @@ export default function AlunoCalendario() {
                         <span className="text-xs text-teal font-semibold">Concluída</span>
                       )}
                     </div>
+
+                    {/* Chat */}
                     {isExpanded && (
-                      <div className="border-t border-gray-200 p-3 flex flex-col gap-3 bg-white">
-                        <div>
-                          <p className="flex items-center gap-1.5 text-xs font-semibold text-navy mb-1.5">
-                            <MessageSquare size={13} /> Minha observação
-                          </p>
-                          <textarea
-                            rows={3}
-                            value={obsTexts[r.id] ?? ''}
-                            onChange={e => setObsTexts(prev => ({ ...prev, [r.id]: e.target.value }))}
-                            placeholder="Escreva suas dúvidas, dificuldades ou anotações sobre esta revisão..."
-                            className="w-full text-xs rounded-lg border border-gray-200 p-2 resize-none focus:outline-none focus:ring-1 focus:ring-teal text-gray-700"
+                      <div className="border-t border-gray-200 bg-white">
+                        {/* Histórico */}
+                        <div
+                          ref={el => { chatRefs.current[r.id] = el }}
+                          className="flex flex-col gap-2 p-3 max-h-52 overflow-y-auto"
+                        >
+                          {comentarios.length === 0 ? (
+                            <p className="text-xs text-gray-400 text-center py-2">Nenhum comentário ainda. Inicie a conversa!</p>
+                          ) : (
+                            comentarios.map((c: any) => {
+                              const isMe = c.autor_id === userId
+                              return (
+                                <div key={c.id} className={`flex flex-col max-w-[85%] ${isMe ? 'self-end items-end' : 'self-start items-start'}`}>
+                                  <span className="text-[10px] text-gray-400 mb-0.5 px-1">
+                                    {isMe ? 'Você' : c.autor?.nome?.split(' ')[0]} · {format(parseISO(c.criado_em), "dd/MM HH:mm")}
+                                  </span>
+                                  <div className={`px-3 py-2 rounded-2xl text-xs leading-relaxed ${
+                                    isMe
+                                      ? 'bg-gradient-to-br from-navy to-teal text-white rounded-tr-sm'
+                                      : 'bg-gray-100 text-navy rounded-tl-sm'
+                                  }`}>
+                                    {c.texto}
+                                  </div>
+                                </div>
+                              )
+                            })
+                          )}
+                        </div>
+                        {/* Input */}
+                        <div className="flex gap-2 p-3 border-t border-gray-100">
+                          <input
+                            type="text"
+                            value={textoNovo[r.id] ?? ''}
+                            onChange={e => setTextoNovo(prev => ({ ...prev, [r.id]: e.target.value }))}
+                            onKeyDown={e => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); enviarComentario(r.id) } }}
+                            placeholder="Escreva uma mensagem..."
+                            className="flex-1 text-xs px-3 py-2 rounded-xl border border-gray-200 outline-none focus:border-teal"
                           />
                           <button
-                            onClick={() => salvarObsAluno(r.id)}
-                            disabled={savingObs === r.id}
-                            className="mt-1.5 text-xs font-semibold px-3 py-1.5 bg-teal text-white rounded-lg disabled:opacity-60"
+                            onClick={() => enviarComentario(r.id)}
+                            disabled={enviando === r.id || !textoNovo[r.id]?.trim()}
+                            className="p-2 bg-gradient-to-br from-navy to-teal text-white rounded-xl disabled:opacity-40"
                           >
-                            {savingObs === r.id ? 'Salvando...' : 'Salvar'}
+                            <Send size={14} />
                           </button>
                         </div>
-                        {r.teacher_comment && (
-                          <div>
-                            <p className="flex items-center gap-1.5 text-xs font-semibold text-navy mb-1.5">
-                              <GraduationCap size={13} /> Observação do professor
-                            </p>
-                            <p className="text-xs text-gray-600 bg-blue-50 border border-blue-100 rounded-lg p-2 whitespace-pre-wrap">{r.teacher_comment}</p>
-                          </div>
-                        )}
                       </div>
                     )}
                   </div>
