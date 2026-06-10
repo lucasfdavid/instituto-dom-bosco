@@ -9,10 +9,14 @@ export const metadata: Metadata = {
     capable: true,
     statusBarStyle: 'black-translucent',
     title: 'Dom Bosco',
-    startupImage: '/images/icon.jpg',
   },
   icons: {
-    apple: '/images/icon.jpg',
+    apple: [
+      { url: '/apple-touch-icon.png', sizes: '180x180', type: 'image/png' },
+    ],
+    icon: [
+      { url: '/apple-touch-icon.png', type: 'image/png' },
+    ],
   },
 }
 
