@@ -9,10 +9,10 @@ export const metadata: Metadata = {
     capable: true,
     statusBarStyle: 'black-translucent',
     title: 'Dom Bosco',
-    startupImage: '/images/icon.png.jpg',
+    startupImage: '/images/icon.jpg',
   },
   icons: {
-    apple: '/images/icon.png.jpg',
+    apple: '/images/icon.jpg',
   },
 }
 
