@@ -405,8 +405,7 @@ export default function AlunoHome() {
                       </div>
                       {!n.lida && <div className="w-2.5 h-2.5 rounded-full bg-teal shrink-0 mt-1.5" />}
                     </button>
-                  )
-                })
+                  ))
               )}
             </div>
           </div>
