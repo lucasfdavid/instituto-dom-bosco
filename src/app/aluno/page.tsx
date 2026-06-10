@@ -1,9 +1,9 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { useEffect, useState, useRef } from 'react'
 import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
-import { Clock, AlertCircle, CalendarDays, BookOpen, CheckCircle2, RotateCcw, X, MessageSquare, HelpCircle } from 'lucide-react'
+import { Clock, AlertCircle, CalendarDays, BookOpen, CheckCircle2, RotateCcw, X, MessageSquare, HelpCircle, Bell, CalendarCheck } from 'lucide-react'
 import { hoje, formatarDataCurta } from '@/lib/utils'
 import { format, parseISO, startOfWeek, endOfWeek } from 'date-fns'
 import { ptBR } from 'date-fns/locale'
@@ -20,6 +20,9 @@ export default function AlunoHome() {
   const [revisaoSelecionada, setRevisaoSelecionada] = useState<any>(null)
   const [aba, setAba] = useState<'pendentes' | 'concluidas'>('pendentes')
   const [modalComoRevisar, setModalComoRevisar] = useState(false)
+  const [notificacoes, setNotificacoes] = useState<any[]>([])
+  const [painelNotif, setPainelNotif] = useState(false)
+  const notifRef = useRef<HTMLDivElement>(null)
 
   async function loadData() {
     const supabase = createClient()
@@ -79,6 +82,15 @@ export default function AlunoHome() {
     setTotalEstudos(conteudos?.length ?? 0)
     setLoading(false)
 
+    // Carrega notificações para o painel
+    const { data: notifs } = await supabase
+      .from('notificacoes')
+      .select('*')
+      .eq('user_id', session.user.id)
+      .order('criado_em', { ascending: false })
+      .limit(20)
+    setNotificacoes(notifs ?? [])
+
     // Notificações de revisão do dia
     if (rHoje && rHoje.length > 0) {
       const chave = `revisao_notif_${dataHoje}_${session.user.id}`
@@ -119,6 +131,25 @@ export default function AlunoHome() {
   }
 
   useEffect(() => { loadData() }, [])
+
+  useEffect(() => {
+    function handleClick(e: MouseEvent) {
+      if (notifRef.current && !notifRef.current.contains(e.target as Node)) {
+        setPainelNotif(false)
+      }
+    }
+    document.addEventListener('mousedown', handleClick)
+    return () => document.removeEventListener('mousedown', handleClick)
+  }, [])
+
+  async function abrirNotificacoes() {
+    setPainelNotif(p => !p)
+    const supabase = createClient()
+    const { data: { session } } = await supabase.auth.getSession()
+    if (!session) return
+    await supabase.from('notificacoes').update({ lida: true }).eq('user_id', session.user.id).eq('lida', false)
+    setNotificacoes(n => n.map(x => ({ ...x, lida: true })))
+  }
 
   async function marcarConcluida(id: string) {
     const supabase = createClient()
@@ -335,12 +366,66 @@ export default function AlunoHome() {
             <h1 className="font-serif text-3xl font-bold text-navy">Olá, {nome}! 👋</h1>
             <p className="text-gray-400 mt-1 capitalize">{diaSemana}</p>
           </div>
-          <button
-            onClick={() => setModalComoRevisar(true)}
-            className="flex items-center gap-1.5 px-3 py-2 rounded-xl border border-gray-200 bg-white text-gray-500 text-xs font-semibold hover:border-teal hover:text-teal transition-colors shrink-0 shadow-sm"
-          >
-            <HelpCircle size={14} /> Como revisar
-          </button>
+          <div className="flex items-center gap-2 shrink-0">
+            {/* Sino de notificações */}
+            <div className="relative" ref={notifRef}>
+              <button
+                onClick={abrirNotificacoes}
+                className="relative flex items-center gap-1.5 px-3 py-2 rounded-xl border border-gray-200 bg-white text-gray-500 text-xs font-semibold hover:border-teal hover:text-teal transition-colors shadow-sm"
+              >
+                <Bell size={14} />
+                {notificacoes.some(n => !n.lida) && (
+                  <span className="absolute -top-1 -right-1 w-4 h-4 bg-red-500 text-white text-[9px] font-bold rounded-full flex items-center justify-center">
+                    {notificacoes.filter(n => !n.lida).length > 9 ? '9+' : notificacoes.filter(n => !n.lida).length}
+                  </span>
+                )}
+              </button>
+
+              {painelNotif && (
+                <div className="absolute right-0 top-full mt-2 w-80 bg-white rounded-2xl border border-gray-200 shadow-xl z-40 overflow-hidden">
+                  <div className="px-4 py-3 border-b border-gray-100 flex items-center justify-between">
+                    <p className="font-semibold text-navy text-sm">Notificações</p>
+                    <button onClick={() => setPainelNotif(false)}>
+                      <X size={15} className="text-gray-400 hover:text-navy" />
+                    </button>
+                  </div>
+                  <div className="max-h-72 overflow-y-auto">
+                    {notificacoes.length === 0 ? (
+                      <div className="px-4 py-8 text-center">
+                        <Bell size={24} className="text-gray-200 mx-auto mb-2" />
+                        <p className="text-xs text-gray-400">Nenhuma notificação ainda.</p>
+                      </div>
+                    ) : (
+                      notificacoes.map(n => (
+                        <div key={n.id} className={`flex items-start gap-3 px-4 py-3 border-b border-gray-50 last:border-0 ${!n.lida ? 'bg-teal/5' : ''}`}>
+                          <div className={`w-7 h-7 rounded-lg flex items-center justify-center shrink-0 mt-0.5 ${n.tipo === 'novo_comentario' ? 'bg-teal/10' : 'bg-navy/10'}`}>
+                            {n.tipo === 'novo_comentario'
+                              ? <MessageSquare size={13} className="text-teal" />
+                              : <CalendarCheck size={13} className="text-navy" />
+                            }
+                          </div>
+                          <div className="flex-1 min-w-0">
+                            <p className="text-xs text-navy leading-snug">{n.mensagem}</p>
+                            <p className="text-[10px] text-gray-400 mt-0.5">
+                              {format(parseISO(n.criado_em), "dd/MM 'às' HH:mm")}
+                            </p>
+                          </div>
+                          {!n.lida && <div className="w-2 h-2 rounded-full bg-teal shrink-0 mt-1" />}
+                        </div>
+                      ))
+                    )}
+                  </div>
+                </div>
+              )}
+            </div>
+
+            <button
+              onClick={() => setModalComoRevisar(true)}
+              className="flex items-center gap-1.5 px-3 py-2 rounded-xl border border-gray-200 bg-white text-gray-500 text-xs font-semibold hover:border-teal hover:text-teal transition-colors shadow-sm"
+            >
+              <HelpCircle size={14} /> Como revisar
+            </button>
+          </div>
         </div>
       </div>
 
