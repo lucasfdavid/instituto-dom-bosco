@@ -1,7 +1,7 @@
 'use client'
 
-import { useEffect, useState, useRef } from 'react'
-import { useRouter } from 'next/navigation'
+import { useEffect, useState, useRef, Suspense } from 'react'
+import { useRouter, useSearchParams } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
 import { hoje } from '@/lib/utils'
 import { CheckCircle2, RotateCcw, ChevronDown, ChevronUp, Send } from 'lucide-react'
@@ -13,8 +13,9 @@ import { ptBR } from 'date-fns/locale'
 
 const DOW = ['Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sáb', 'Dom']
 
-export default function AlunoCalendario() {
+function AlunoCalendarioInner() {
   const router = useRouter()
+  const searchParams = useSearchParams()
   const [loading, setLoading] = useState(true)
   const [userId, setUserId] = useState<string>('')
   const [revisoes, setRevisoes] = useState<any[]>([])
@@ -37,11 +38,32 @@ export default function AlunoCalendario() {
       .select('*, conteudo:conteudos(*)')
       .eq('aluno_id', session.user.id)
       .order('data_revisao')
-    setRevisoes(data ?? [])
+    const revisoes = data ?? []
+    setRevisoes(revisoes)
     setLoading(false)
+
+    // Se veio da notificação com ?revisao=<id>, seleciona a data e abre o chat
+    const revisaoId = searchParams.get('revisao')
+    if (revisaoId) {
+      const rev = revisoes.find(r => r.id === revisaoId)
+      if (rev) {
+        const dataRev = parseISO(rev.data_revisao)
+        setCurrent(dataRev)
+        setSelectedDate(dataRev)
+        setExpandedId(revisaoId)
+        await loadComentariosById(revisaoId)
+        setTimeout(() => {
+          const el = chatRefs.current[revisaoId]
+          if (el) {
+            el.scrollTop = el.scrollHeight
+            el.closest('[data-revisao]')?.scrollIntoView({ behavior: 'smooth', block: 'center' })
+          }
+        }, 200)
+      }
+    }
   }
 
-  async function loadComentarios(revisaoId: string) {
+  async function loadComentariosById(revisaoId: string) {
     const supabase = createClient()
     const { data } = await supabase
       .from('comentarios')
@@ -56,7 +78,7 @@ export default function AlunoCalendario() {
       setExpandedId(null)
     } else {
       setExpandedId(revisaoId)
-      await loadComentarios(revisaoId)
+      await loadComentariosById(revisaoId)
       setTimeout(() => {
         const el = chatRefs.current[revisaoId]
         if (el) el.scrollTop = el.scrollHeight
@@ -76,7 +98,7 @@ export default function AlunoCalendario() {
       texto,
     })
     setTextoNovo(prev => ({ ...prev, [revisaoId]: '' }))
-    await loadComentarios(revisaoId)
+    await loadComentariosById(revisaoId)
     setEnviando(null)
     setTimeout(() => {
       const el = chatRefs.current[revisaoId]
@@ -178,7 +200,7 @@ export default function AlunoCalendario() {
                 const isExpanded = expandedId === r.id
                 const comentarios = comentariosPorRevisao[r.id] ?? []
                 return (
-                  <div key={r.id} className={`rounded-xl border overflow-hidden ${r.status === 'completed' ? 'border-teal/20 bg-teal-light' : 'border-gray-200 bg-gray-50'}`}>
+                  <div key={r.id} data-revisao={r.id} className={`rounded-xl border overflow-hidden ${r.status === 'completed' ? 'border-teal/20 bg-teal-light' : 'border-gray-200 bg-gray-50'}`}>
                     <div className="p-3">
                       <div className="flex items-start justify-between gap-2">
                         <div className="flex-1 min-w-0">
@@ -264,5 +286,17 @@ export default function AlunoCalendario() {
         </div>
       </div>
     </div>
+  )
+}
+
+export default function AlunoCalendario() {
+  return (
+    <Suspense fallback={
+      <div className="min-h-screen flex items-center justify-center">
+        <p className="text-gray-400 font-condensed tracking-widest">Carregando...</p>
+      </div>
+    }>
+      <AlunoCalendarioInner />
+    </Suspense>
   )
 }

@@ -374,11 +374,15 @@ export default function AlunoHome() {
                       key={n.id}
                       onClick={() => {
                         setPainelNotif(false)
-                        if (revisao) setRevisaoSelecionada(revisao)
+                        if (n.revisao_id) {
+                          router.push(`/aluno/calendario?revisao=${n.revisao_id}`)
+                        } else {
+                          router.push('/aluno/calendario')
+                        }
                       }}
-                      className={`flex items-start gap-4 px-6 py-4 border-b border-gray-50 last:border-0 text-left w-full transition-colors ${
+                      className={`flex items-start gap-4 px-6 py-4 border-b border-gray-50 last:border-0 text-left w-full transition-colors cursor-pointer ${
                         !n.lida ? 'bg-teal/5 hover:bg-teal/10' : 'hover:bg-gray-50'
-                      } ${revisao ? 'cursor-pointer' : 'cursor-default'}`}
+                      }`}
                     >
                       <div className={`w-9 h-9 rounded-xl flex items-center justify-center shrink-0 mt-0.5 ${n.tipo === 'novo_comentario' ? 'bg-teal/10' : 'bg-navy/10'}`}>
                         {n.tipo === 'novo_comentario'
@@ -391,9 +395,7 @@ export default function AlunoHome() {
                         <p className="text-xs text-gray-400 mt-1">
                           {format(parseISO(n.criado_em), "d 'de' MMMM 'às' HH:mm", { locale: ptBR })}
                         </p>
-                        {revisao && (
-                          <p className="text-xs text-teal font-semibold mt-1">Toque para ver a revisão →</p>
-                        )}
+                        <p className="text-xs text-teal font-semibold mt-1">Toque para ver no calendário →</p>
                       </div>
                       {!n.lida && <div className="w-2.5 h-2.5 rounded-full bg-teal shrink-0 mt-1.5" />}
                     </button>
