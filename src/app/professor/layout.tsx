@@ -44,7 +44,7 @@ export default function ProfessorLayout({ children }: { children: React.ReactNod
   }
 
   return (
-    <div className="flex min-h-screen bg-gray-50">
+    <div className="flex min-h-screen bg-gray-50 w-full overflow-x-hidden">
       {/* SIDEBAR — desktop */}
       <aside className="hidden md:flex flex-col w-64 min-h-screen bg-gradient-to-b from-navy to-teal fixed left-0 top-0 z-20">
         <div className="px-6 py-6 border-b border-white/10">
@@ -88,7 +88,7 @@ export default function ProfessorLayout({ children }: { children: React.ReactNod
       </aside>
 
       {/* MAIN */}
-      <main className="flex-1 md:ml-64 flex flex-col min-h-screen">
+      <main className="flex-1 min-w-0 md:ml-64 flex flex-col min-h-screen w-full overflow-x-hidden">
         <div className="flex-1 overflow-y-auto pb-20 md:pb-0">
           {children}
         </div>
