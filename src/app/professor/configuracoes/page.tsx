@@ -1,7 +1,7 @@
 'use client'
 
 import Link from 'next/link'
-import { BookOpen, ChevronRight, UserPlus } from 'lucide-react'
+import { BookOpen, ChevronRight, UserPlus, Users } from 'lucide-react'
 
 const configuracoes = [
   {
@@ -9,6 +9,12 @@ const configuracoes = [
     icon: BookOpen,
     titulo: 'Gerenciar cursos',
     descricao: 'Adicione, edite ou desative cursos e turmas disponíveis para os alunos',
+  },
+  {
+    href: '/professor/alunos-config',
+    icon: Users,
+    titulo: 'Alunos',
+    descricao: 'Edite a data de matrícula e informações administrativas dos alunos',
   },
   {
     href: '/professor/convidar',

@@ -3,14 +3,16 @@
 import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
-import { Save } from 'lucide-react'
+import { Save, GraduationCap } from 'lucide-react'
 
 export default function PerfilPage() {
   const router = useRouter()
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
   const [sucesso, setSucesso] = useState(false)
+  const [erro, setErro] = useState('')
   const [initials, setInitials] = useState('')
+  const [cursos, setCursos] = useState<any[]>([])
   const [form, setForm] = useState({
     nome: '',
     email: '',
@@ -25,11 +27,10 @@ export default function PerfilPage() {
       const { data: { session } } = await supabase.auth.getSession()
       if (!session) { router.push('/auth/login'); return }
 
-      const { data: profile } = await supabase
-        .from('profiles')
-        .select('*')
-        .eq('id', session.user.id)
-        .single()
+      const [{ data: profile }, { data: cursosData }] = await Promise.all([
+        supabase.from('profiles').select('*').eq('id', session.user.id).single(),
+        supabase.from('cursos').select('*').eq('ativo', true).order('categoria').order('nome'),
+      ])
 
       if (profile) {
         setForm({
@@ -41,6 +42,7 @@ export default function PerfilPage() {
         })
         setInitials((profile.nome ?? '').split(' ').map((x: string) => x[0]).slice(0, 2).join(''))
       }
+      setCursos(cursosData ?? [])
       setLoading(false)
     }
     load()
@@ -49,20 +51,36 @@ export default function PerfilPage() {
   async function handleSalvar(e: React.FormEvent) {
     e.preventDefault()
     setSaving(true)
+    setErro('')
     const supabase = createClient()
     const { data: { session } } = await supabase.auth.getSession()
     if (!session) return
 
-    await supabase.from('profiles').update({
+    const { error } = await supabase.from('profiles').update({
       nome: form.nome,
       phone: form.phone,
       course: form.course,
-      enroll_date: form.enroll_date || null,
     }).eq('id', session.user.id)
 
-    setSucesso(true)
+    if (error) {
+      setErro('Erro ao salvar: ' + error.message)
+    } else {
+      setSucesso(true)
+      setInitials(form.nome.split(' ').map((x: string) => x[0]).slice(0, 2).join(''))
+      setTimeout(() => setSucesso(false), 3000)
+    }
     setSaving(false)
-    setTimeout(() => setSucesso(false), 3000)
+  }
+
+  const cursosPorCategoria = {
+    fundamental: cursos.filter(c => c.categoria === 'fundamental'),
+    medio: cursos.filter(c => c.categoria === 'medio'),
+    graduacao: cursos.filter(c => c.categoria === 'graduacao'),
+  }
+  const categoriaLabel: Record<string, string> = {
+    fundamental: 'Ensino Fundamental',
+    medio: 'Ensino Médio',
+    graduacao: 'Graduação',
   }
 
   if (loading) return (
@@ -86,13 +104,20 @@ export default function PerfilPage() {
           </div>
           <div>
             <p className="font-serif text-xl font-semibold text-navy">{form.nome}</p>
-            <p className="text-sm text-gray-400">Aluno · {form.enroll_date ? `Matriculado em ${form.enroll_date}` : 'Sem data de matrícula'}</p>
+            <p className="text-sm text-gray-400">
+              Aluno · {form.enroll_date ? `Matriculado em ${form.enroll_date}` : 'Sem data de matrícula'}
+            </p>
           </div>
         </div>
 
         {sucesso && (
           <div className="bg-teal-light border border-teal/20 rounded-xl p-3 text-center mb-4">
             <p className="text-teal text-sm font-semibold">✅ Perfil atualizado com sucesso!</p>
+          </div>
+        )}
+        {erro && (
+          <div className="bg-red-50 border border-red-200 rounded-xl p-3 text-center mb-4">
+            <p className="text-red-600 text-sm font-semibold">{erro}</p>
           </div>
         )}
 
@@ -130,22 +155,37 @@ export default function PerfilPage() {
 
           <div>
             <label className="block text-sm font-semibold text-navy mb-2">Curso / Turma</label>
-            <input
-              type="text"
-              value={form.course}
-              onChange={e => setForm({ ...form, course: e.target.value })}
-              placeholder="Ex: Pré-Vestibular 2026"
-              className="w-full px-4 py-3 rounded-xl border border-gray-200 bg-gray-50 text-navy text-sm outline-none focus:border-teal focus:bg-white transition-all"
-            />
+            <div className="relative">
+              <GraduationCap size={16} className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400" />
+              <select
+                value={form.course}
+                onChange={e => setForm({ ...form, course: e.target.value })}
+                className="w-full pl-10 pr-4 py-3 rounded-xl border border-gray-200 bg-gray-50 text-navy text-sm outline-none focus:border-teal focus:bg-white transition-all appearance-none"
+              >
+                <option value="">Selecione seu curso/turma</option>
+                {Object.entries(cursosPorCategoria).map(([cat, lista]) =>
+                  lista.length > 0 && (
+                    <optgroup key={cat} label={categoriaLabel[cat]}>
+                      {lista.map((c: any) => (
+                        <option key={c.id} value={c.nome}>{c.nome}</option>
+                      ))}
+                    </optgroup>
+                  )
+                )}
+              </select>
+            </div>
           </div>
 
           <div>
-            <label className="block text-sm font-semibold text-navy mb-2">Data de matrícula</label>
+            <label className="block text-sm font-semibold text-navy mb-2">
+              Data de matrícula
+              <span className="ml-2 text-xs font-normal text-gray-400">(definida pelo professor)</span>
+            </label>
             <input
-              type="date"
-              value={form.enroll_date}
-              onChange={e => setForm({ ...form, enroll_date: e.target.value })}
-              className="w-full px-4 py-3 rounded-xl border border-gray-200 bg-gray-50 text-navy text-sm outline-none focus:border-teal focus:bg-white transition-all"
+              type="text"
+              value={form.enroll_date || 'Não informada'}
+              disabled
+              className="w-full px-4 py-3 rounded-xl border border-gray-200 bg-gray-100 text-gray-400 text-sm cursor-not-allowed"
             />
           </div>
 
