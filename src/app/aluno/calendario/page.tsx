@@ -205,7 +205,13 @@ function AlunoCalendarioInner() {
                       <div className="flex items-start justify-between gap-2">
                         <div className="flex-1 min-w-0">
                           <p className="font-semibold text-navy text-sm mb-0.5">{r.conteudo?.assunto}</p>
-                          <p className="text-xs text-gray-400 mb-2">{r.conteudo?.materia} · {r.tipo}</p>
+                          <p className="text-xs text-gray-400">{r.conteudo?.materia} · {r.tipo}</p>
+                          {r.data_original && r.data_original !== r.data_revisao && (
+                            <p className="text-[10px] text-orange-500 font-medium mt-0.5">
+                              ↻ Remarcada · prevista em {format(parseISO(r.data_original), 'dd/MM')}
+                            </p>
+                          )}
+                          <div className="mb-2" />
                         </div>
                         <button
                           onClick={() => toggleExpand(r.id)}

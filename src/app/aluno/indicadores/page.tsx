@@ -3,7 +3,7 @@
 import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
-import { BookOpen, CheckCircle2, Clock, TrendingUp } from 'lucide-react'
+import { BookOpen, CheckCircle2, Clock, TrendingUp, CalendarCheck, CalendarX } from 'lucide-react'
 
 export default function IndicadoresPage() {
   const router = useRouter()
@@ -13,6 +13,8 @@ export default function IndicadoresPage() {
     revisoesConcluidadas: 0,
     revisoesPendentes: 0,
     taxaAdesao: 0,
+    noPrazo: 0,
+    foraDoPrazo: 0,
   })
   const [porCategoria, setPorCategoria] = useState<{ materia: string; total: number }[]>([])
   const [porIntervalo, setPorIntervalo] = useState<{ tipo: string; concluidas: number; pendentes: number }[]>([])
@@ -38,7 +40,16 @@ export default function IndicadoresPage() {
       const pendentes = revisoes?.filter(r => r.status !== 'completed').length ?? 0
       const taxa = revisoes?.length ? Math.round((concluidas / revisoes.length) * 100) : 0
 
-      setStats({ totalEstudos: total, revisoesConcluidadas: concluidas, revisoesPendentes: pendentes, taxaAdesao: taxa })
+      const noPrazo = revisoes?.filter(r =>
+        r.status === 'completed' && r.concluida_em && r.data_original &&
+        r.concluida_em.slice(0, 10) <= r.data_original
+      ).length ?? 0
+      const foraDoPrazo = revisoes?.filter(r =>
+        r.status === 'completed' && r.concluida_em && r.data_original &&
+        r.concluida_em.slice(0, 10) > r.data_original
+      ).length ?? 0
+
+      setStats({ totalEstudos: total, revisoesConcluidadas: concluidas, revisoesPendentes: pendentes, taxaAdesao: taxa, noPrazo, foraDoPrazo })
 
       // Por categoria
       const catMap: Record<string, number> = {}
@@ -65,10 +76,12 @@ export default function IndicadoresPage() {
   )
 
   const statCards = [
-    { icon: BookOpen, label: 'Total de estudos', value: stats.totalEstudos, color: 'bg-gradient-to-br from-navy to-navy-light', text: 'text-white' },
-    { icon: CheckCircle2, label: 'Revisões concluídas', value: stats.revisoesConcluidadas, color: 'bg-gradient-to-br from-teal to-teal-mid', text: 'text-white' },
-    { icon: Clock, label: 'Revisões pendentes', value: stats.revisoesPendentes, color: 'bg-gradient-to-br from-orange-400 to-orange-500', text: 'text-white' },
-    { icon: TrendingUp, label: 'Taxa de adesão', value: `${stats.taxaAdesao}%`, color: 'bg-gradient-to-br from-purple-500 to-purple-600', text: 'text-white' },
+    { icon: BookOpen,      label: 'Total de estudos',       value: stats.totalEstudos,          color: 'bg-gradient-to-br from-navy to-navy-light' },
+    { icon: CheckCircle2,  label: 'Revisões concluídas',    value: stats.revisoesConcluidadas,   color: 'bg-gradient-to-br from-teal to-teal-mid' },
+    { icon: Clock,         label: 'Revisões pendentes',     value: stats.revisoesPendentes,      color: 'bg-gradient-to-br from-orange-400 to-orange-500' },
+    { icon: TrendingUp,    label: 'Taxa de adesão',         value: `${stats.taxaAdesao}%`,       color: 'bg-gradient-to-br from-purple-500 to-purple-600' },
+    { icon: CalendarCheck, label: 'Concluídas no prazo',    value: stats.noPrazo,                color: 'bg-gradient-to-br from-green-500 to-green-600' },
+    { icon: CalendarX,     label: 'Concluídas fora do prazo', value: stats.foraDoPrazo,          color: 'bg-gradient-to-br from-red-400 to-red-500' },
   ]
 
   const maxCat = Math.max(...porCategoria.map(c => c.total), 1)
@@ -81,12 +94,12 @@ export default function IndicadoresPage() {
       </div>
 
       {/* Stats */}
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-8">
-        {statCards.map(({ icon: Icon, label, value, color, text }) => (
+      <div className="grid grid-cols-2 md:grid-cols-3 gap-3 mb-8">
+        {statCards.map(({ icon: Icon, label, value, color }) => (
           <div key={label} className={`${color} rounded-2xl p-4 shadow-sm`}>
-            <Icon size={20} className={`${text} opacity-80 mb-2`} />
-            <p className={`font-bold text-2xl ${text}`}>{value}</p>
-            <p className={`text-xs ${text} opacity-70 mt-0.5`}>{label}</p>
+            <Icon size={20} className="text-white opacity-80 mb-2" />
+            <p className="font-bold text-2xl text-white">{value}</p>
+            <p className="text-xs text-white opacity-70 mt-0.5">{label}</p>
           </div>
         ))}
       </div>

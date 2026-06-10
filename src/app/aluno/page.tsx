@@ -235,7 +235,19 @@ export default function AlunoHome() {
               </button>
             </div>
             <h3 className="font-serif text-xl font-bold text-navy mb-1">{revisaoSelecionada.conteudo?.assunto}</h3>
-            <p className="text-xs text-gray-400 mb-4">Prevista: {formatarDataCurta(revisaoSelecionada.data_revisao)}</p>
+            <div className="flex flex-col gap-0.5 mb-4">
+              <p className="text-xs text-gray-400">
+                {revisaoSelecionada.data_original && revisaoSelecionada.data_original !== revisaoSelecionada.data_revisao
+                  ? <>Remarcada para: <span className="font-semibold text-navy">{formatarDataCurta(revisaoSelecionada.data_revisao)}</span></>
+                  : <>Prevista: <span className="font-semibold text-navy">{formatarDataCurta(revisaoSelecionada.data_revisao)}</span></>
+                }
+              </p>
+              {revisaoSelecionada.data_original && revisaoSelecionada.data_original !== revisaoSelecionada.data_revisao && (
+                <p className="text-[11px] text-orange-500 font-medium">
+                  ↻ Data original: {formatarDataCurta(revisaoSelecionada.data_original)}
+                </p>
+              )}
+            </div>
             {revisaoSelecionada.conteudo?.descricao && (
               <div className="bg-gray-50 rounded-xl p-3 mb-4">
                 <p className="text-xs font-semibold text-gray-400 uppercase tracking-wide mb-1">Descrição</p>

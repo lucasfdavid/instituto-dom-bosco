@@ -3,7 +3,7 @@
 import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
-import { Users, CheckCircle2, Clock, TrendingUp } from 'lucide-react'
+import { Users, CheckCircle2, Clock, TrendingUp, CalendarCheck, CalendarX } from 'lucide-react'
 
 export default function ProfessorIndicadores() {
   const router = useRouter()
@@ -29,7 +29,7 @@ export default function ProfessorIndicadores() {
       const alunosComStats = await Promise.all(
         alunosBase.map(async (aluno: any) => {
           const { data: revisoes } = await supabase
-            .from('revisoes').select('status, tipo').eq('aluno_id', aluno.id)
+            .from('revisoes').select('status, tipo, concluida_em, data_original').eq('aluno_id', aluno.id)
           const { data: conteudos } = await supabase
             .from('conteudos').select('materia').eq('aluno_id', aluno.id)
 
@@ -49,7 +49,16 @@ export default function ProfessorIndicadores() {
             pendentes: revisoes?.filter(r => r.tipo === tipo && r.status !== 'completed').length ?? 0,
           }))
 
-          return { ...aluno, total, concluidas, pct, nConteudos: conteudos?.length ?? 0, materias, porIntervalo }
+          const noPrazo = revisoes?.filter(r =>
+            r.status === 'completed' && r.concluida_em && r.data_original &&
+            r.concluida_em.slice(0, 10) <= r.data_original
+          ).length ?? 0
+          const foraDoPrazo = revisoes?.filter(r =>
+            r.status === 'completed' && r.concluida_em && r.data_original &&
+            r.concluida_em.slice(0, 10) > r.data_original
+          ).length ?? 0
+
+          return { ...aluno, total, concluidas, pct, nConteudos: conteudos?.length ?? 0, materias, porIntervalo, noPrazo, foraDoPrazo }
         })
       )
 
@@ -94,10 +103,12 @@ export default function ProfessorIndicadores() {
   ]
 
   const statsAluno = alunoSelecionado ? [
-    { icon: CheckCircle2, label: 'Revisões concluídas', value: alunoSelecionado.concluidas, color: 'bg-gradient-to-br from-teal to-teal-mid' },
-    { icon: Clock, label: 'Total de revisões', value: alunoSelecionado.total, color: 'bg-gradient-to-br from-orange-400 to-orange-500' },
-    { icon: TrendingUp, label: 'Taxa de adesão', value: `${alunoSelecionado.pct}%`, color: 'bg-gradient-to-br from-purple-500 to-purple-600' },
-    { icon: Users, label: 'Conteúdos', value: alunoSelecionado.nConteudos, color: 'bg-gradient-to-br from-navy to-navy-light' },
+    { icon: CheckCircle2,  label: 'Revisões concluídas',       value: alunoSelecionado.concluidas,  color: 'bg-gradient-to-br from-teal to-teal-mid' },
+    { icon: Clock,         label: 'Total de revisões',         value: alunoSelecionado.total,       color: 'bg-gradient-to-br from-orange-400 to-orange-500' },
+    { icon: TrendingUp,    label: 'Taxa de adesão',            value: `${alunoSelecionado.pct}%`,   color: 'bg-gradient-to-br from-purple-500 to-purple-600' },
+    { icon: Users,         label: 'Conteúdos',                 value: alunoSelecionado.nConteudos,  color: 'bg-gradient-to-br from-navy to-navy-light' },
+    { icon: CalendarCheck, label: 'Concluídas no prazo',       value: alunoSelecionado.noPrazo,     color: 'bg-gradient-to-br from-green-500 to-green-600' },
+    { icon: CalendarX,     label: 'Concluídas fora do prazo',  value: alunoSelecionado.foraDoPrazo, color: 'bg-gradient-to-br from-red-400 to-red-500' },
   ] : []
 
   const statsAtivos = visao === 'geral' ? statsGeral : statsAluno

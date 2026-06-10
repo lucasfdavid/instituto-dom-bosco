@@ -47,9 +47,9 @@ export default function RegistrarPage() {
 
     const datas = calcularRevisoes(dataEstudo)
     await supabase.from('revisoes').insert([
-      { conteudo_id: conteudo.id, aluno_id: session.user.id, tipo: 'D1', data_revisao: datas.D1, status: 'pending' },
-      { conteudo_id: conteudo.id, aluno_id: session.user.id, tipo: 'D7', data_revisao: datas.D7, status: 'pending' },
-      { conteudo_id: conteudo.id, aluno_id: session.user.id, tipo: 'D30', data_revisao: datas.D30, status: 'pending' },
+      { conteudo_id: conteudo.id, aluno_id: session.user.id, tipo: 'D1',  data_revisao: datas.D1,  data_original: datas.D1,  status: 'pending' },
+      { conteudo_id: conteudo.id, aluno_id: session.user.id, tipo: 'D7',  data_revisao: datas.D7,  data_original: datas.D7,  status: 'pending' },
+      { conteudo_id: conteudo.id, aluno_id: session.user.id, tipo: 'D30', data_revisao: datas.D30, data_original: datas.D30, status: 'pending' },
     ])
 
     setSucesso(true)

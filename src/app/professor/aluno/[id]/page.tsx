@@ -5,7 +5,7 @@ import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
 import Link from 'next/link'
 import { formatarDataCurta } from '@/lib/utils'
-import { CheckCircle2, ChevronDown, ChevronUp, Send, Trash2 } from 'lucide-react'
+import { CheckCircle2, ChevronDown, ChevronUp, Send, Trash2, CalendarDays } from 'lucide-react'
 import { format, parseISO } from 'date-fns'
 
 export default function AlunoDetalhe({ params }: { params: { id: string } }) {
@@ -18,6 +18,8 @@ export default function AlunoDetalhe({ params }: { params: { id: string } }) {
   const [comentariosPorRevisao, setComentariosPorRevisao] = useState<Record<string, any[]>>({})
   const [textoNovo, setTextoNovo] = useState<Record<string, string>>({})
   const [enviando, setEnviando] = useState<string | null>(null)
+  const [remarcarDatas, setRemarcarDatas] = useState<Record<string, string>>({})
+  const [remarcando, setRemarcando] = useState<string | null>(null)
   const chatRefs = useRef<Record<string, HTMLDivElement | null>>({})
 
   async function loadData() {
@@ -62,6 +64,17 @@ export default function AlunoDetalhe({ params }: { params: { id: string } }) {
         }, 100)
       })
     }
+  }
+
+  async function remarcarRevisao(revisaoId: string) {
+    const novaData = remarcarDatas[revisaoId]
+    if (!novaData) return
+    setRemarcando(revisaoId)
+    const supabase = createClient()
+    await supabase.from('revisoes').update({ data_revisao: novaData, status: 'rescheduled' }).eq('id', revisaoId)
+    setRemarcando(null)
+    setRemarcarDatas(d => ({ ...d, [revisaoId]: '' }))
+    await loadData()
   }
 
   async function excluirRevisao(revisaoId: string) {
@@ -194,6 +207,25 @@ export default function AlunoDetalhe({ params }: { params: { id: string } }) {
                               <Trash2 size={13} />
                             </button>
                           </div>
+                        </div>
+
+                        {/* Remarcar (professor) */}
+                        <div className="px-4 py-2.5 border-t border-gray-100 bg-gray-50/50 flex items-center gap-2">
+                          <CalendarDays size={13} className="text-gray-400 shrink-0" />
+                          <span className="text-[11px] text-gray-400 shrink-0">Remarcar para:</span>
+                          <input
+                            type="date"
+                            value={remarcarDatas[r.id] ?? ''}
+                            onChange={e => setRemarcarDatas(d => ({ ...d, [r.id]: e.target.value }))}
+                            className="flex-1 text-xs px-2 py-1.5 rounded-lg border border-gray-200 outline-none focus:border-teal bg-white"
+                          />
+                          <button
+                            onClick={() => remarcarRevisao(r.id)}
+                            disabled={!remarcarDatas[r.id] || remarcando === r.id}
+                            className="text-xs px-3 py-1.5 rounded-lg bg-gradient-to-r from-navy to-teal text-white font-semibold disabled:opacity-40 shrink-0"
+                          >
+                            {remarcando === r.id ? '...' : 'Salvar'}
+                          </button>
                         </div>
 
                         {/* Chat */}
