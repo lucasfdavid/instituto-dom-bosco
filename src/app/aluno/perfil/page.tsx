@@ -19,6 +19,7 @@ export default function PerfilPage() {
     phone: '',
     course: '',
     enroll_date: '',
+    birth_date: '',
   })
 
   useEffect(() => {
@@ -39,6 +40,7 @@ export default function PerfilPage() {
           phone: profile.phone ?? '',
           course: profile.course ?? '',
           enroll_date: profile.enroll_date ?? '',
+          birth_date: profile.birth_date ?? '',
         })
         setInitials((profile.nome ?? '').split(' ').map((x: string) => x[0]).slice(0, 2).join(''))
       }
@@ -60,6 +62,7 @@ export default function PerfilPage() {
       nome: form.nome,
       phone: form.phone,
       course: form.course,
+      birth_date: form.birth_date || null,
     }).eq('id', session.user.id)
 
     if (error) {
@@ -149,6 +152,16 @@ export default function PerfilPage() {
               value={form.phone}
               onChange={e => setForm({ ...form, phone: e.target.value })}
               placeholder="(62) 99999-9999"
+              className="w-full px-4 py-3 rounded-xl border border-gray-200 bg-gray-50 text-navy text-sm outline-none focus:border-teal focus:bg-white transition-all"
+            />
+          </div>
+
+          <div>
+            <label className="block text-sm font-semibold text-navy mb-2">Data de nascimento</label>
+            <input
+              type="date"
+              value={form.birth_date}
+              onChange={e => setForm({ ...form, birth_date: e.target.value })}
               className="w-full px-4 py-3 rounded-xl border border-gray-200 bg-gray-50 text-navy text-sm outline-none focus:border-teal focus:bg-white transition-all"
             />
           </div>

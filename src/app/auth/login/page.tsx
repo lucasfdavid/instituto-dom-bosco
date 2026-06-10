@@ -24,6 +24,7 @@ export default function LoginPage() {
   const [confirmarSenha, setConfirmarSenha] = useState('')
   const [telefone, setTelefone] = useState('')
   const [curso, setCurso] = useState('')
+  const [nascimento, setNascimento] = useState('')
 
   useEffect(() => {
     async function loadCursos() {
@@ -100,11 +101,12 @@ export default function LoginPage() {
       return
     }
 
-    // Atualiza perfil com telefone e curso
+    // Atualiza perfil com telefone, curso e nascimento
     await supabase.from('profiles').update({
       nome,
       phone: telefone,
       course: curso,
+      birth_date: nascimento || null,
     }).eq('id', data.user.id)
 
     setSucesso(true)
@@ -250,6 +252,13 @@ export default function LoginPage() {
                     <input type="tel" required value={telefone} onChange={e => setTelefone(e.target.value)}
                       placeholder="(62) 99999-9999"
                       className="w-full pl-10 pr-4 py-3 rounded-xl border border-gray-200 bg-gray-50 text-navy text-sm outline-none focus:border-teal focus:bg-white transition-all" />
+                  </div>
+                </div>
+                <div>
+                  <label className="block text-sm font-semibold text-navy mb-2">Data de nascimento</label>
+                  <div className="relative">
+                    <input type="date" value={nascimento} onChange={e => setNascimento(e.target.value)}
+                      className="w-full px-4 py-3 rounded-xl border border-gray-200 bg-gray-50 text-navy text-sm outline-none focus:border-teal focus:bg-white transition-all" />
                   </div>
                 </div>
                 <div>
