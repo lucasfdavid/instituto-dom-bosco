@@ -91,15 +91,19 @@ export default function ProfessorIndicadores() {
 
   const totalRevisoes = alunos.reduce((s, a) => s + a.total, 0)
   const totalConcluidas = alunos.reduce((s, a) => s + a.concluidas, 0)
+  const totalNoPrazo = alunos.reduce((s, a) => s + (a.noPrazo ?? 0), 0)
+  const totalForaDoPrazo = alunos.reduce((s, a) => s + (a.foraDoPrazo ?? 0), 0)
   const taxaMedia = alunos.length ? Math.round(alunos.reduce((s, a) => s + a.pct, 0) / alunos.length) : 0
 
   const alunoSelecionado = visao !== 'geral' ? alunos.find(a => a.id === visao) : null
 
   const statsGeral = [
-    { icon: Users, label: 'Alunos ativos', value: alunos.length, color: 'bg-gradient-to-br from-navy to-navy-light' },
-    { icon: CheckCircle2, label: 'Revisões concluídas', value: totalConcluidas, color: 'bg-gradient-to-br from-teal to-teal-mid' },
-    { icon: Clock, label: 'Total de revisões', value: totalRevisoes, color: 'bg-gradient-to-br from-orange-400 to-orange-500' },
-    { icon: TrendingUp, label: 'Taxa média', value: `${taxaMedia}%`, color: 'bg-gradient-to-br from-purple-500 to-purple-600' },
+    { icon: Users,         label: 'Alunos ativos',              value: alunos.length,      color: 'bg-gradient-to-br from-navy to-navy-light' },
+    { icon: CheckCircle2,  label: 'Revisões concluídas',        value: totalConcluidas,     color: 'bg-gradient-to-br from-teal to-teal-mid' },
+    { icon: Clock,         label: 'Total de revisões',          value: totalRevisoes,       color: 'bg-gradient-to-br from-orange-400 to-orange-500' },
+    { icon: TrendingUp,    label: 'Taxa média',                 value: `${taxaMedia}%`,     color: 'bg-gradient-to-br from-purple-500 to-purple-600' },
+    { icon: CalendarCheck, label: 'Concluídas no prazo',        value: totalNoPrazo,        color: 'bg-gradient-to-br from-green-500 to-green-600' },
+    { icon: CalendarX,     label: 'Concluídas fora do prazo',   value: totalForaDoPrazo,    color: 'bg-gradient-to-br from-red-400 to-red-500' },
   ]
 
   const statsAluno = alunoSelecionado ? [
@@ -138,7 +142,7 @@ export default function ProfessorIndicadores() {
       </div>
 
       {/* Stats */}
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-8">
+      <div className="grid grid-cols-2 md:grid-cols-3 gap-3 mb-8">
         {statsAtivos.map(({ icon: Icon, label, value, color }) => (
           <div key={label} className={`${color} rounded-2xl p-4 shadow-sm`}>
             <Icon size={20} className="text-white opacity-80 mb-2" />

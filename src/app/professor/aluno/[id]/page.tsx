@@ -186,7 +186,7 @@ export default function AlunoDetalhe({ params }: { params: { id: string } }) {
                     return (
                       <div key={r.id} className={`rounded-xl border overflow-hidden ${r.status === 'completed' ? 'bg-teal-light border-teal/20' : 'bg-gray-50 border-gray-200'}`}>
                         {/* Cabeçalho da revisão */}
-                        <div className="flex items-center justify-between px-4 py-2.5">
+                        <div className="flex items-start justify-between px-4 py-2.5">
                           <div className="flex items-center gap-2">
                             <span className="font-condensed text-xs font-bold text-navy uppercase">Revisão {r.tipo}</span>
                             {r.status === 'completed' && <CheckCircle2 size={13} className="text-teal" />}
@@ -198,7 +198,14 @@ export default function AlunoDetalhe({ params }: { params: { id: string } }) {
                             }`}>
                               {r.status === 'completed' ? '✓ Concluída' : r.status === 'rescheduled' ? '↻ Remarcada' : '○ Pendente'}
                             </span>
-                            <span className="text-xs text-gray-400">{formatarDataCurta(r.data_revisao)}</span>
+                            <div className="flex flex-col items-end">
+                              <span className="text-xs text-gray-400">{formatarDataCurta(r.data_revisao)}</span>
+                              {r.data_original && r.data_original !== r.data_revisao && (
+                                <span className="text-[10px] text-orange-500 font-medium">
+                                  orig. {formatarDataCurta(r.data_original)}
+                                </span>
+                              )}
+                            </div>
                             <button
                               onClick={() => excluirRevisao(r.id)}
                               className="p-1 rounded-lg text-red-400 hover:bg-red-50 hover:text-red-600 transition-colors"
