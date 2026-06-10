@@ -365,20 +365,14 @@ export default function AlunoHome() {
                   <p className="text-sm text-gray-400">Nenhuma notificação ainda.</p>
                 </div>
               ) : (
-                notificacoes.map(n => {
-                  const revisao = n.revisao_id
-                    ? [...revisoesHoje, ...revisoesAtrasadas, ...revisoesSemana, ...revisoesConcluidas].find(r => r.id === n.revisao_id)
-                    : null
-                  return (
+                notificacoes.map(n => (
                     <button
                       key={n.id}
                       onClick={() => {
-                        setPainelNotif(false)
-                        if (n.revisao_id) {
-                          router.push(`/aluno/calendario?revisao=${n.revisao_id}`)
-                        } else {
-                          router.push('/aluno/calendario')
-                        }
+                        const url = n.revisao_id
+                          ? `/aluno/calendario?revisao=${n.revisao_id}`
+                          : '/aluno/calendario'
+                        window.location.href = url
                       }}
                       className={`flex items-start gap-4 px-6 py-4 border-b border-gray-50 last:border-0 text-left w-full transition-colors cursor-pointer ${
                         !n.lida ? 'bg-teal/5 hover:bg-teal/10' : 'hover:bg-gray-50'
