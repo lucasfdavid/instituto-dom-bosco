@@ -1,0 +1,24 @@
+{
+  "name": "Instituto Dom Bosco",
+  "short_name": "Dom Bosco",
+  "description": "Psicologia e Aprendizagem — Método D1·D7·D30",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#0D1B3E",
+  "theme_color": "#0D1B3E",
+  "orientation": "portrait",
+  "icons": [
+    {
+      "src": "/images/icon.png.jpg",
+      "sizes": "192x192",
+      "type": "image/jpeg",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "/images/icon.png.jpg",
+      "sizes": "512x512",
+      "type": "image/jpeg",
+      "purpose": "any maskable"
+    }
+  ]
+}
