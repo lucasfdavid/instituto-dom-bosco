@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useState, useRef } from 'react'
+import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
 import { Clock, AlertCircle, CalendarDays, BookOpen, CheckCircle2, RotateCcw, X, MessageSquare, HelpCircle, Bell, CalendarCheck } from 'lucide-react'
@@ -22,7 +22,6 @@ export default function AlunoHome() {
   const [modalComoRevisar, setModalComoRevisar] = useState(false)
   const [notificacoes, setNotificacoes] = useState<any[]>([])
   const [painelNotif, setPainelNotif] = useState(false)
-  const notifRef = useRef<HTMLDivElement>(null)
 
   async function loadData() {
     const supabase = createClient()
@@ -131,16 +130,6 @@ export default function AlunoHome() {
   }
 
   useEffect(() => { loadData() }, [])
-
-  useEffect(() => {
-    function handleClick(e: MouseEvent) {
-      if (notifRef.current && !notifRef.current.contains(e.target as Node)) {
-        setPainelNotif(false)
-      }
-    }
-    document.addEventListener('mousedown', handleClick)
-    return () => document.removeEventListener('mousedown', handleClick)
-  }, [])
 
   async function abrirNotificacoes() {
     setPainelNotif(p => !p)
@@ -359,6 +348,63 @@ export default function AlunoHome() {
         </div>
       )}
 
+      {/* Modal Notificações */}
+      {painelNotif && (
+        <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
+          <div className="bg-white rounded-2xl w-full max-w-lg shadow-xl flex flex-col max-h-[80vh]">
+            <div className="flex items-center justify-between p-6 pb-4 border-b border-gray-100">
+              <h2 className="font-serif text-xl font-bold text-navy">Notificações</h2>
+              <button onClick={() => setPainelNotif(false)} className="text-gray-400 hover:text-navy">
+                <X size={20} />
+              </button>
+            </div>
+            <div className="overflow-y-auto flex flex-col">
+              {notificacoes.length === 0 ? (
+                <div className="px-6 py-12 text-center">
+                  <Bell size={32} className="text-gray-200 mx-auto mb-3" />
+                  <p className="text-sm text-gray-400">Nenhuma notificação ainda.</p>
+                </div>
+              ) : (
+                notificacoes.map(n => {
+                  const revisao = n.revisao_id
+                    ? [...revisoesHoje, ...revisoesAtrasadas, ...revisoesSemana, ...revisoesConcluidas].find(r => r.id === n.revisao_id)
+                    : null
+                  return (
+                    <button
+                      key={n.id}
+                      onClick={() => {
+                        setPainelNotif(false)
+                        if (revisao) setRevisaoSelecionada(revisao)
+                      }}
+                      className={`flex items-start gap-4 px-6 py-4 border-b border-gray-50 last:border-0 text-left w-full transition-colors ${
+                        !n.lida ? 'bg-teal/5 hover:bg-teal/10' : 'hover:bg-gray-50'
+                      } ${revisao ? 'cursor-pointer' : 'cursor-default'}`}
+                    >
+                      <div className={`w-9 h-9 rounded-xl flex items-center justify-center shrink-0 mt-0.5 ${n.tipo === 'novo_comentario' ? 'bg-teal/10' : 'bg-navy/10'}`}>
+                        {n.tipo === 'novo_comentario'
+                          ? <MessageSquare size={16} className="text-teal" />
+                          : <CalendarCheck size={16} className="text-navy" />
+                        }
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <p className="text-sm text-navy leading-snug">{n.mensagem}</p>
+                        <p className="text-xs text-gray-400 mt-1">
+                          {format(parseISO(n.criado_em), "d 'de' MMMM 'às' HH:mm", { locale: ptBR })}
+                        </p>
+                        {revisao && (
+                          <p className="text-xs text-teal font-semibold mt-1">Toque para ver a revisão →</p>
+                        )}
+                      </div>
+                      {!n.lida && <div className="w-2.5 h-2.5 rounded-full bg-teal shrink-0 mt-1.5" />}
+                    </button>
+                  )
+                })
+              )}
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* Header */}
       <div className="mb-6">
         <div className="flex items-start justify-between gap-4">
@@ -368,56 +414,17 @@ export default function AlunoHome() {
           </div>
           <div className="flex items-center gap-2 shrink-0">
             {/* Sino de notificações */}
-            <div className="relative" ref={notifRef}>
-              <button
-                onClick={abrirNotificacoes}
-                className="relative flex items-center gap-1.5 px-3 py-2 rounded-xl border border-gray-200 bg-white text-gray-500 text-xs font-semibold hover:border-teal hover:text-teal transition-colors shadow-sm"
-              >
-                <Bell size={14} />
-                {notificacoes.some(n => !n.lida) && (
-                  <span className="absolute -top-1 -right-1 w-4 h-4 bg-red-500 text-white text-[9px] font-bold rounded-full flex items-center justify-center">
-                    {notificacoes.filter(n => !n.lida).length > 9 ? '9+' : notificacoes.filter(n => !n.lida).length}
-                  </span>
-                )}
-              </button>
-
-              {painelNotif && (
-                <div className="absolute right-0 top-full mt-2 w-80 bg-white rounded-2xl border border-gray-200 shadow-xl z-40 overflow-hidden">
-                  <div className="px-4 py-3 border-b border-gray-100 flex items-center justify-between">
-                    <p className="font-semibold text-navy text-sm">Notificações</p>
-                    <button onClick={() => setPainelNotif(false)}>
-                      <X size={15} className="text-gray-400 hover:text-navy" />
-                    </button>
-                  </div>
-                  <div className="max-h-72 overflow-y-auto">
-                    {notificacoes.length === 0 ? (
-                      <div className="px-4 py-8 text-center">
-                        <Bell size={24} className="text-gray-200 mx-auto mb-2" />
-                        <p className="text-xs text-gray-400">Nenhuma notificação ainda.</p>
-                      </div>
-                    ) : (
-                      notificacoes.map(n => (
-                        <div key={n.id} className={`flex items-start gap-3 px-4 py-3 border-b border-gray-50 last:border-0 ${!n.lida ? 'bg-teal/5' : ''}`}>
-                          <div className={`w-7 h-7 rounded-lg flex items-center justify-center shrink-0 mt-0.5 ${n.tipo === 'novo_comentario' ? 'bg-teal/10' : 'bg-navy/10'}`}>
-                            {n.tipo === 'novo_comentario'
-                              ? <MessageSquare size={13} className="text-teal" />
-                              : <CalendarCheck size={13} className="text-navy" />
-                            }
-                          </div>
-                          <div className="flex-1 min-w-0">
-                            <p className="text-xs text-navy leading-snug">{n.mensagem}</p>
-                            <p className="text-[10px] text-gray-400 mt-0.5">
-                              {format(parseISO(n.criado_em), "dd/MM 'às' HH:mm")}
-                            </p>
-                          </div>
-                          {!n.lida && <div className="w-2 h-2 rounded-full bg-teal shrink-0 mt-1" />}
-                        </div>
-                      ))
-                    )}
-                  </div>
-                </div>
+            <button
+              onClick={abrirNotificacoes}
+              className="relative flex items-center gap-1.5 px-3 py-2 rounded-xl border border-gray-200 bg-white text-gray-500 text-xs font-semibold hover:border-teal hover:text-teal transition-colors shadow-sm"
+            >
+              <Bell size={14} />
+              {notificacoes.some(n => !n.lida) && (
+                <span className="absolute -top-1 -right-1 w-4 h-4 bg-red-500 text-white text-[9px] font-bold rounded-full flex items-center justify-center">
+                  {notificacoes.filter(n => !n.lida).length > 9 ? '9+' : notificacoes.filter(n => !n.lida).length}
+                </span>
               )}
-            </div>
+            </button>
 
             <button
               onClick={() => setModalComoRevisar(true)}
