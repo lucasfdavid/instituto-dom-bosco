@@ -78,6 +78,44 @@ export default function AlunoHome() {
     setRevisoesConcluidas(rConcluidas ?? [])
     setTotalEstudos(conteudos?.length ?? 0)
     setLoading(false)
+
+    // Notificações de revisão do dia
+    if (rHoje && rHoje.length > 0) {
+      const chave = `revisao_notif_${dataHoje}_${session.user.id}`
+      if (!localStorage.getItem(chave)) {
+        localStorage.setItem(chave, '1')
+        const msg = rHoje.length === 1
+          ? `Você tem 1 revisão para hoje: ${rHoje[0].conteudo?.assunto ?? ''}`
+          : `Você tem ${rHoje.length} revisões para fazer hoje!`
+
+        // Insere na tabela de notificações (sem duplicar no mesmo dia)
+        const { data: jaExiste } = await supabase
+          .from('notificacoes')
+          .select('id')
+          .eq('user_id', session.user.id)
+          .eq('tipo', 'revisao_hoje')
+          .gte('criado_em', `${dataHoje}T00:00:00`)
+          .limit(1)
+        if (!jaExiste || jaExiste.length === 0) {
+          await supabase.from('notificacoes').insert({
+            user_id: session.user.id,
+            tipo: 'revisao_hoje',
+            mensagem: msg,
+          })
+        }
+
+        // Notificação do browser se permitido
+        if ('Notification' in window) {
+          if (Notification.permission === 'granted') {
+            new Notification('Instituto Dom Bosco', { body: msg, icon: '/apple-touch-icon.png' })
+          } else if (Notification.permission === 'default') {
+            Notification.requestPermission().then(p => {
+              if (p === 'granted') new Notification('Instituto Dom Bosco', { body: msg, icon: '/apple-touch-icon.png' })
+            })
+          }
+        }
+      }
+    }
   }
 
   useEffect(() => { loadData() }, [])

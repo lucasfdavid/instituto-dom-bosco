@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
 import { Save, GraduationCap } from 'lucide-react'
+import { DateSelect } from '@/components/DateSelect'
 
 export default function PerfilPage() {
   const router = useRouter()
@@ -158,11 +159,9 @@ export default function PerfilPage() {
 
           <div>
             <label className="block text-sm font-semibold text-navy mb-2">Data de nascimento</label>
-            <input
-              type="date"
+            <DateSelect
               value={form.birth_date}
-              onChange={e => setForm({ ...form, birth_date: e.target.value })}
-              className="w-full px-4 py-3 rounded-xl border border-gray-200 bg-gray-50 text-navy text-sm outline-none focus:border-teal focus:bg-white transition-all"
+              onChange={v => setForm({ ...form, birth_date: v })}
             />
           </div>
 

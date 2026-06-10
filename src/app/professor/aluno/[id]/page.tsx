@@ -5,7 +5,7 @@ import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
 import Link from 'next/link'
 import { formatarDataCurta } from '@/lib/utils'
-import { CheckCircle2, ChevronDown, ChevronUp, Send } from 'lucide-react'
+import { CheckCircle2, ChevronDown, ChevronUp, Send, Trash2 } from 'lucide-react'
 import { format, parseISO } from 'date-fns'
 
 export default function AlunoDetalhe({ params }: { params: { id: string } }) {
@@ -62,6 +62,13 @@ export default function AlunoDetalhe({ params }: { params: { id: string } }) {
         }, 100)
       })
     }
+  }
+
+  async function excluirRevisao(revisaoId: string) {
+    if (!confirm('Excluir esta revisão? Esta ação não pode ser desfeita.')) return
+    const supabase = createClient()
+    await supabase.from('revisoes').delete().eq('id', revisaoId)
+    await loadData()
   }
 
   async function enviarComentario(revisaoId: string) {
@@ -179,6 +186,13 @@ export default function AlunoDetalhe({ params }: { params: { id: string } }) {
                               {r.status === 'completed' ? '✓ Concluída' : r.status === 'rescheduled' ? '↻ Remarcada' : '○ Pendente'}
                             </span>
                             <span className="text-xs text-gray-400">{formatarDataCurta(r.data_revisao)}</span>
+                            <button
+                              onClick={() => excluirRevisao(r.id)}
+                              className="p-1 rounded-lg text-red-400 hover:bg-red-50 hover:text-red-600 transition-colors"
+                              title="Excluir revisão"
+                            >
+                              <Trash2 size={13} />
+                            </button>
                           </div>
                         </div>
 

@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
 import { BookOpen, Mail, Lock, User, Phone, GraduationCap } from 'lucide-react'
+import { DateSelect } from '@/components/DateSelect'
 
 export default function LoginPage() {
   const router = useRouter()
@@ -256,10 +257,7 @@ export default function LoginPage() {
                 </div>
                 <div>
                   <label className="block text-sm font-semibold text-navy mb-2">Data de nascimento</label>
-                  <div className="relative">
-                    <input type="date" value={nascimento} onChange={e => setNascimento(e.target.value)}
-                      className="w-full px-4 py-3 rounded-xl border border-gray-200 bg-gray-50 text-navy text-sm outline-none focus:border-teal focus:bg-white transition-all" />
-                  </div>
+                  <DateSelect value={nascimento} onChange={setNascimento} />
                 </div>
                 <div>
                   <label className="block text-sm font-semibold text-navy mb-2">Curso / Turma</label>

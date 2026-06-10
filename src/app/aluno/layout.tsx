@@ -4,7 +4,7 @@ import { useEffect, useState } from 'react'
 import { useRouter, usePathname } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
 import Link from 'next/link'
-import { Home, PlusCircle, CalendarDays, BarChart2, User, LogOut, BookOpen } from 'lucide-react'
+import { Home, PlusCircle, CalendarDays, BarChart2, User, LogOut, BookOpen, Bell } from 'lucide-react'
 
 const navItems = [
   { href: '/aluno', icon: Home, label: 'Início' },
@@ -20,6 +20,7 @@ export default function AlunoLayout({ children }: { children: React.ReactNode })
   const [nome, setNome] = useState('')
   const [email, setEmail] = useState('')
   const [initials, setInitials] = useState('')
+  const [naoLidas, setNaoLidas] = useState(0)
 
   useEffect(() => {
     async function load() {
@@ -38,6 +39,13 @@ export default function AlunoLayout({ children }: { children: React.ReactNode })
       setNome(profile?.nome ?? '')
       setEmail(profile?.email ?? '')
       setInitials((profile?.nome ?? '').split(' ').map((x: string) => x[0]).slice(0, 2).join(''))
+
+      const { count } = await supabase
+        .from('notificacoes')
+        .select('id', { count: 'exact', head: true })
+        .eq('user_id', session.user.id)
+        .eq('lida', false)
+      setNaoLidas(count ?? 0)
     }
     load()
   }, [])
@@ -83,6 +91,21 @@ export default function AlunoLayout({ children }: { children: React.ReactNode })
           })}
         </nav>
 
+        {/* Notificações desktop */}
+        <div className="px-3 pb-2">
+          <Link href="/aluno/notificacoes" className={`flex items-center gap-3 px-4 py-3 rounded-xl transition-all text-sm font-medium relative ${
+            pathname === '/aluno/notificacoes' ? 'bg-white text-navy shadow-sm' : 'text-white/80 hover:bg-white/10'
+          }`}>
+            <Bell size={18} />
+            Notificações
+            {naoLidas > 0 && (
+              <span className="ml-auto bg-red-500 text-white text-[10px] font-bold rounded-full min-w-[18px] h-[18px] flex items-center justify-center px-1">
+                {naoLidas > 9 ? '9+' : naoLidas}
+              </span>
+            )}
+          </Link>
+        </div>
+
         {/* User + logout */}
         <div className="px-4 py-4 border-t border-white/10">
           <div className="flex items-center gap-3 mb-3">
@@ -121,6 +144,17 @@ export default function AlunoLayout({ children }: { children: React.ReactNode })
             </Link>
           )
         })}
+        <Link href="/aluno/notificacoes" className="flex-1 flex flex-col items-center gap-1 py-2.5 relative">
+          <div className="relative">
+            <Bell size={20} className={pathname === '/aluno/notificacoes' ? 'text-teal' : 'text-gray-400'} />
+            {naoLidas > 0 && (
+              <span className="absolute -top-1 -right-1 bg-red-500 text-white text-[8px] font-bold rounded-full min-w-[14px] h-[14px] flex items-center justify-center px-0.5">
+                {naoLidas > 9 ? '9+' : naoLidas}
+              </span>
+            )}
+          </div>
+          <span className={`font-condensed text-[9px] uppercase tracking-wide ${pathname === '/aluno/notificacoes' ? 'text-teal font-semibold' : 'text-gray-400'}`}>Avisos</span>
+        </Link>
         <button onClick={handleLogout} className="flex-1 flex flex-col items-center gap-1 py-2.5">
           <LogOut size={20} className="text-gray-400" />
           <span className="font-condensed text-[9px] uppercase tracking-wide text-gray-400">Sair</span>

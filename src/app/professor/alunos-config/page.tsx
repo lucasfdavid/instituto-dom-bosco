@@ -4,7 +4,7 @@ import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
 import Link from 'next/link'
-import { Save, CheckCircle2 } from 'lucide-react'
+import { Save, CheckCircle2, Trash2 } from 'lucide-react'
 
 export default function AlunosConfigPage() {
   const router = useRouter()
@@ -35,6 +35,17 @@ export default function AlunosConfigPage() {
     }
     load()
   }, [])
+
+  async function excluirAluno(alunoId: string, nome: string) {
+    if (!confirm(`Excluir o aluno "${nome}"? Todos os conteúdos e revisões serão removidos. Esta ação não pode ser desfeita.`)) return
+    const supabase = createClient()
+    const { error } = await supabase.from('profiles').delete().eq('id', alunoId)
+    if (error) {
+      alert('Erro ao excluir: ' + error.message)
+    } else {
+      setAlunos(a => a.filter(x => x.id !== alunoId))
+    }
+  }
 
   async function salvarData(alunoId: string) {
     setSalvando(s => ({ ...s, [alunoId]: true }))
@@ -90,6 +101,13 @@ export default function AlunosConfigPage() {
                   <p className="font-semibold text-navy text-sm">{aluno.nome}</p>
                   <p className="text-xs text-gray-400 truncate">{aluno.course || aluno.email}</p>
                 </div>
+                <button
+                  onClick={() => excluirAluno(aluno.id, aluno.nome)}
+                  className="p-2 rounded-xl text-red-400 hover:bg-red-50 hover:text-red-600 transition-colors shrink-0"
+                  title="Excluir aluno"
+                >
+                  <Trash2 size={16} />
+                </button>
               </div>
 
               <div className="flex items-end gap-2">
