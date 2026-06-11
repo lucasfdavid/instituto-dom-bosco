@@ -12,7 +12,7 @@ export async function POST(request: Request) {
 
     const { error } = await supabase.auth.admin.inviteUserByEmail(email, {
       data: { role: 'professor' },
-      redirectTo: 'https://instituto-dom-bosco.vercel.app/auth/confirmar'
+      redirectTo: `${process.env.NEXT_PUBLIC_SITE_URL ?? 'https://institutodombosco.vercel.app'}/auth/confirmar`
     })
 
     if (error) throw error
