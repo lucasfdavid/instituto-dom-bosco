@@ -30,7 +30,7 @@ export default function ProfessorLayout({ children }: { children: React.ReactNod
         .select('nome, email, role')
         .eq('id', session.user.id)
         .single()
-      if (!['professor', 'administrador'].includes(profile?.role)) { router.push('/aluno'); return }
+      if (!profile || !['professor', 'administrador'].includes(profile.role)) { router.push('/aluno'); return }
       setRole(profile.role)
       setNome(profile.nome ?? '')
       setEmail(profile.email ?? '')
