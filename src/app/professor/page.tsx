@@ -106,8 +106,37 @@ export default function ProfessorPage() {
       }
     }
 
-    // Recarrega notificações após inserir aniversários
-    if (aniversariantes.length > 0) {
+    // Notificações de revisões do dia por aluno
+    let inseriu = aniversariantes.length > 0
+    for (const aluno of alunosComStats) {
+      if (aluno.hojeCount > 0) {
+        const chaveRev = `revisao_prof_notif_${dataHoje}_${aluno.id}_${session.user.id}`
+        if (!localStorage.getItem(chaveRev)) {
+          const qtd = aluno.hojeCount
+          const msg = `📚 ${aluno.nome} tem ${qtd} revisão${qtd > 1 ? 'ões' : ''} para hoje.`
+          const { data: jaExiste } = await supabase
+            .from('notificacoes')
+            .select('id')
+            .eq('user_id', session.user.id)
+            .eq('tipo', 'revisao_hoje_aluno')
+            .eq('mensagem', msg)
+            .gte('criado_em', `${dataHoje}T00:00:00`)
+            .limit(1)
+          if (!jaExiste || jaExiste.length === 0) {
+            await supabase.from('notificacoes').insert({
+              user_id: session.user.id,
+              tipo: 'revisao_hoje_aluno',
+              mensagem: msg,
+            })
+            inseriu = true
+          }
+          localStorage.setItem(chaveRev, '1')
+        }
+      }
+    }
+
+    // Recarrega notificações após inserir novas
+    if (inseriu) {
       const { data: notifsAtualizadas } = await supabase
         .from('notificacoes')
         .select('*')
