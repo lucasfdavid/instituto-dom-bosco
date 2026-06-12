@@ -4,12 +4,11 @@ import { useEffect, useState } from 'react'
 import { useRouter, usePathname } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
 import Link from 'next/link'
-import { Users, BarChart2, LogOut, BookOpen, Settings, Shield } from 'lucide-react'
+import { Users, BarChart2, LogOut, BookOpen, Shield } from 'lucide-react'
 
 const navItems = [
   { href: '/professor', icon: Users, label: 'Meus alunos' },
   { href: '/professor/indicadores', icon: BarChart2, label: 'Indicadores' },
-  { href: '/professor/configuracoes', icon: Settings, label: 'Configurações' },
 ]
 
 export default function ProfessorLayout({ children }: { children: React.ReactNode }) {

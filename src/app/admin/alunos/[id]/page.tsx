@@ -4,7 +4,7 @@ import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
 import Link from 'next/link'
-import { Save, CheckCircle2, User, Mail, Phone, GraduationCap, Calendar } from 'lucide-react'
+import { Save, CheckCircle2, User, Mail, Phone, GraduationCap, Calendar, Trash2 } from 'lucide-react'
 
 const CATEGORIAS = [
   { value: 'fundamental', label: 'Ensino Fundamental' },
@@ -49,6 +49,17 @@ export default function AdminAlunoDetalhe({ params }: { params: { id: string } }
     }
     load()
   }, [])
+
+  async function handleExcluir() {
+    if (!confirm('Excluir este aluno? Todos os conteúdos e revisões serão removidos. Esta ação não pode ser desfeita.')) return
+    const supabase = createClient()
+    const { error } = await supabase.from('profiles').delete().eq('id', params.id)
+    if (error) {
+      alert('Erro ao excluir: ' + error.message)
+    } else {
+      router.push('/admin/alunos')
+    }
+  }
 
   async function handleSalvar(e: React.FormEvent) {
     e.preventDefault()
@@ -97,9 +108,17 @@ export default function AdminAlunoDetalhe({ params }: { params: { id: string } }
 
   return (
     <div className="p-6 max-w-xl">
-      <Link href="/admin/alunos" className="text-sm text-gray-400 hover:text-navy flex items-center gap-1 mb-6">
-        ← Voltar para alunos
-      </Link>
+      <div className="flex items-center justify-between mb-6">
+        <Link href="/admin/alunos" className="text-sm text-gray-400 hover:text-navy flex items-center gap-1">
+          ← Voltar para alunos
+        </Link>
+        <button
+          onClick={handleExcluir}
+          className="flex items-center gap-1.5 px-3 py-2 rounded-xl text-red-500 hover:bg-red-50 text-sm font-medium transition-colors"
+        >
+          <Trash2 size={15} /> Excluir aluno
+        </button>
+      </div>
 
       <div className="mb-6">
         <h1 className="font-serif text-3xl font-bold text-navy">Editar aluno</h1>
