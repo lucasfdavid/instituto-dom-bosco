@@ -4,21 +4,20 @@ import { useEffect, useState } from 'react'
 import { useRouter, usePathname } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
 import Link from 'next/link'
-import { Users, BarChart2, LogOut, BookOpen, Settings, Shield } from 'lucide-react'
+import { Users, BookOpen, GraduationCap, LogOut, Shield, ArrowLeft } from 'lucide-react'
 
 const navItems = [
-  { href: '/professor', icon: Users, label: 'Meus alunos' },
-  { href: '/professor/indicadores', icon: BarChart2, label: 'Indicadores' },
-  { href: '/professor/configuracoes', icon: Settings, label: 'Configurações' },
+  { href: '/admin/professores', icon: Users, label: 'Professores' },
+  { href: '/admin/alunos', icon: GraduationCap, label: 'Alunos' },
+  { href: '/admin/cursos', icon: BookOpen, label: 'Cursos' },
 ]
 
-export default function ProfessorLayout({ children }: { children: React.ReactNode }) {
+export default function AdminLayout({ children }: { children: React.ReactNode }) {
   const router = useRouter()
   const pathname = usePathname()
   const [nome, setNome] = useState('')
   const [email, setEmail] = useState('')
   const [initials, setInitials] = useState('')
-  const [role, setRole] = useState('')
 
   useEffect(() => {
     async function load() {
@@ -30,8 +29,7 @@ export default function ProfessorLayout({ children }: { children: React.ReactNod
         .select('nome, email, role')
         .eq('id', session.user.id)
         .single()
-      if (!['professor', 'administrador'].includes(profile?.role)) { router.push('/aluno'); return }
-      setRole(profile.role)
+      if (profile?.role !== 'administrador') { router.push('/aluno'); return }
       setNome(profile.nome ?? '')
       setEmail(profile.email ?? '')
       setInitials((profile.nome ?? '').split(' ').map((x: string) => x[0]).slice(0, 2).join(''))
@@ -52,17 +50,17 @@ export default function ProfessorLayout({ children }: { children: React.ReactNod
         <div className="px-6 py-6 border-b border-white/10">
           <div className="flex items-center gap-3">
             <div className="w-10 h-10 rounded-xl bg-white/20 flex items-center justify-center">
-              <BookOpen size={20} className="text-white" />
+              <Shield size={20} className="text-white" />
             </div>
             <div>
-              <p className="font-serif text-white font-semibold text-base leading-tight">Instituto</p>
+              <p className="font-serif text-white font-semibold text-base leading-tight">Administrador</p>
               <p className="font-condensed text-white/60 text-[10px] uppercase tracking-widest">Dom Bosco</p>
             </div>
           </div>
         </div>
         <nav className="flex-1 px-3 py-4 flex flex-col gap-1">
           {navItems.map(({ href, icon: Icon, label }) => {
-            const active = pathname === href
+            const active = pathname.startsWith(href)
             return (
               <Link key={href} href={href} className={`flex items-center gap-3 px-4 py-3 rounded-xl transition-all text-sm font-medium ${
                 active ? 'bg-white text-navy shadow-sm' : 'text-white/80 hover:bg-white/10'
@@ -72,13 +70,12 @@ export default function ProfessorLayout({ children }: { children: React.ReactNod
               </Link>
             )
           })}
-          {role === 'administrador' && (
-            <Link href="/admin/professores" className="flex items-center gap-3 px-4 py-3 rounded-xl transition-all text-sm font-medium text-white/80 hover:bg-white/10 mt-2 border-t border-white/10 pt-3">
-              <Shield size={18} />
-              Administração
-            </Link>
-          )}
         </nav>
+        <div className="px-3 py-3 border-t border-white/10">
+          <Link href="/professor" className="flex items-center gap-2 px-4 py-2.5 rounded-xl text-white/70 hover:bg-white/10 text-sm transition-all mb-2">
+            <ArrowLeft size={16} /> Área do professor
+          </Link>
+        </div>
         <div className="px-4 py-4 border-t border-white/10">
           <div className="flex items-center gap-3 mb-3">
             <div className="w-9 h-9 rounded-full bg-white/20 flex items-center justify-center">
@@ -105,7 +102,7 @@ export default function ProfessorLayout({ children }: { children: React.ReactNod
       {/* BOTTOM NAV — mobile */}
       <nav className="md:hidden fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200 flex z-20 pb-safe">
         {navItems.map(({ href, icon: Icon, label }) => {
-          const active = pathname === href
+          const active = pathname.startsWith(href)
           return (
             <Link key={href} href={href} className="flex-1 flex flex-col items-center gap-1 py-2.5">
               <Icon size={20} className={active ? 'text-teal' : 'text-gray-400'} />
@@ -115,12 +112,6 @@ export default function ProfessorLayout({ children }: { children: React.ReactNod
             </Link>
           )
         })}
-        {role === 'administrador' && (
-          <Link href="/admin/professores" className="flex-1 flex flex-col items-center gap-1 py-2.5">
-            <Shield size={20} className="text-gray-400" />
-            <span className="font-condensed text-[9px] uppercase tracking-wide text-gray-400">Admin</span>
-          </Link>
-        )}
         <button onClick={handleLogout} className="flex-1 flex flex-col items-center gap-1 py-2.5">
           <LogOut size={20} className="text-gray-400" />
           <span className="font-condensed text-[9px] uppercase tracking-wide text-gray-400">Sair</span>

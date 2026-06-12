@@ -69,7 +69,7 @@ export default function ConfirmarPage() {
     const roleDoConvite = user?.user_metadata?.role ?? 'aluno'
     await supabase.from('profiles').update({ role: roleDoConvite }).eq('id', user!.id)
 
-    if (roleDoConvite === 'professor') {
+    if (roleDoConvite === 'professor' || roleDoConvite === 'administrador') {
       window.location.href = '/professor'
     } else {
       window.location.href = '/aluno'

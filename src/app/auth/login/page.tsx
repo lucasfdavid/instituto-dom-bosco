@@ -61,7 +61,7 @@ export default function LoginPage() {
       .eq('id', data.user.id)
       .single()
 
-    if (profileData?.role === 'professor') {
+    if (profileData?.role === 'professor' || profileData?.role === 'administrador') {
       window.location.href = '/professor'
     } else {
       window.location.href = '/aluno'
