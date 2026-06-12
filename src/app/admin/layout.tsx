@@ -4,9 +4,14 @@ import { useEffect, useState } from 'react'
 import { useRouter, usePathname } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
 import Link from 'next/link'
-import { Users, BookOpen, GraduationCap, LogOut, Shield, ArrowLeft } from 'lucide-react'
+import { Users, BarChart2, LogOut, BookOpen, GraduationCap, Shield, ArrowLeft } from 'lucide-react'
 
-const navItems = [
+const professorItems = [
+  { href: '/professor', icon: Users, label: 'Meus alunos' },
+  { href: '/professor/indicadores', icon: BarChart2, label: 'Indicadores' },
+]
+
+const adminItems = [
   { href: '/admin/professores', icon: Users, label: 'Professores' },
   { href: '/admin/alunos', icon: GraduationCap, label: 'Alunos' },
   { href: '/admin/cursos', icon: BookOpen, label: 'Cursos' },
@@ -29,10 +34,11 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
         .select('nome, email, role')
         .eq('id', session.user.id)
         .single()
-      if (profile?.role !== 'administrador') { router.push('/aluno'); return }
-      setNome(profile.nome ?? '')
-      setEmail(profile.email ?? '')
-      setInitials((profile.nome ?? '').split(' ').map((x: string) => x[0]).slice(0, 2).join(''))
+      const roleEfetivo = profile?.role ?? (session.user.user_metadata?.role as string | undefined)
+      if (roleEfetivo !== 'administrador') { router.push('/professor'); return }
+      setNome(profile?.nome ?? '')
+      setEmail(profile?.email ?? '')
+      setInitials((profile?.nome ?? '').split(' ').map((x: string) => x[0]).slice(0, 2).join(''))
     }
     load()
   }, [])
@@ -50,16 +56,37 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
         <div className="px-6 py-6 border-b border-white/10">
           <div className="flex items-center gap-3">
             <div className="w-10 h-10 rounded-xl bg-white/20 flex items-center justify-center">
-              <Shield size={20} className="text-white" />
+              <BookOpen size={20} className="text-white" />
             </div>
             <div>
-              <p className="font-serif text-white font-semibold text-base leading-tight">Administrador</p>
+              <p className="font-serif text-white font-semibold text-base leading-tight">Instituto</p>
               <p className="font-condensed text-white/60 text-[10px] uppercase tracking-widest">Dom Bosco</p>
             </div>
           </div>
         </div>
+
         <nav className="flex-1 px-3 py-4 flex flex-col gap-1">
-          {navItems.map(({ href, icon: Icon, label }) => {
+          {/* Itens do professor */}
+          {professorItems.map(({ href, icon: Icon, label }) => {
+            const active = pathname === href
+            return (
+              <Link key={href} href={href} className={`flex items-center gap-3 px-4 py-3 rounded-xl transition-all text-sm font-medium ${
+                active ? 'bg-white text-navy shadow-sm' : 'text-white/80 hover:bg-white/10'
+              }`}>
+                <Icon size={18} />
+                {label}
+              </Link>
+            )
+          })}
+
+          {/* Divisor administração */}
+          <div className="flex items-center gap-2 px-4 pt-4 pb-1">
+            <Shield size={12} className="text-white/40" />
+            <span className="font-condensed text-[10px] uppercase tracking-widest text-white/40">Administração</span>
+          </div>
+
+          {/* Itens admin */}
+          {adminItems.map(({ href, icon: Icon, label }) => {
             const active = pathname.startsWith(href)
             return (
               <Link key={href} href={href} className={`flex items-center gap-3 px-4 py-3 rounded-xl transition-all text-sm font-medium ${
@@ -71,11 +98,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
             )
           })}
         </nav>
-        <div className="px-3 py-3 border-t border-white/10">
-          <Link href="/professor" className="flex items-center gap-2 px-4 py-2.5 rounded-xl text-white/70 hover:bg-white/10 text-sm transition-all mb-2">
-            <ArrowLeft size={16} /> Área do professor
-          </Link>
-        </div>
+
         <div className="px-4 py-4 border-t border-white/10">
           <div className="flex items-center gap-3 mb-3">
             <div className="w-9 h-9 rounded-full bg-white/20 flex items-center justify-center">
@@ -101,7 +124,18 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
 
       {/* BOTTOM NAV — mobile */}
       <nav className="md:hidden fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200 flex z-20 pb-safe">
-        {navItems.map(({ href, icon: Icon, label }) => {
+        {professorItems.map(({ href, icon: Icon, label }) => {
+          const active = pathname === href
+          return (
+            <Link key={href} href={href} className="flex-1 flex flex-col items-center gap-1 py-2.5">
+              <Icon size={20} className={active ? 'text-teal' : 'text-gray-400'} />
+              <span className={`font-condensed text-[9px] uppercase tracking-wide ${active ? 'text-teal font-semibold' : 'text-gray-400'}`}>
+                {label}
+              </span>
+            </Link>
+          )
+        })}
+        {adminItems.map(({ href, icon: Icon, label }) => {
           const active = pathname.startsWith(href)
           return (
             <Link key={href} href={href} className="flex-1 flex flex-col items-center gap-1 py-2.5">
