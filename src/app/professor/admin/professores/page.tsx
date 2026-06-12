@@ -16,11 +16,13 @@ export default function AdminProfessores() {
     const { data: { session } } = await supabase.auth.getSession()
     if (!session) { router.push('/auth/login'); return }
 
-    const { data } = await supabase
+    const { data, error } = await supabase
       .from('profiles')
-      .select('id, nome, email, created_at')
+      .select('id, nome, email')
       .eq('role', 'professor')
       .order('nome')
+
+    if (error) console.error('Erro ao carregar professores:', error.message)
 
     setProfessores(data ?? [])
     setLoading(false)
