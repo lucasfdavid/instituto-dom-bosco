@@ -75,7 +75,7 @@ export default function ProfessorLayout({ children }: { children: React.ReactNod
             )
           })}
           {role === 'administrador' && (
-            <Link href="/admin/professores" className="flex items-center gap-3 px-4 py-3 rounded-xl transition-all text-sm font-medium text-white/80 hover:bg-white/10 mt-2 border-t border-white/10 pt-3">
+            <Link href="/admin" className="flex items-center gap-3 px-4 py-3 rounded-xl transition-all text-sm font-medium text-white/80 hover:bg-white/10 mt-2 border-t border-white/10 pt-3">
               <Shield size={18} />
               Administração
             </Link>
@@ -118,7 +118,7 @@ export default function ProfessorLayout({ children }: { children: React.ReactNod
           )
         })}
         {role === 'administrador' && (
-          <Link href="/admin/professores" className="flex-1 flex flex-col items-center gap-1 py-2.5">
+          <Link href="/admin" className="flex-1 flex flex-col items-center gap-1 py-2.5">
             <Shield size={20} className="text-gray-400" />
             <span className="font-condensed text-[9px] uppercase tracking-wide text-gray-400">Admin</span>
           </Link>
