@@ -29,8 +29,11 @@ export default function ProfessorLayout({ children }: { children: React.ReactNod
         .select('nome, email, role')
         .eq('id', session.user.id)
         .single()
-      if (!profile || !['professor', 'administrador'].includes(profile.role)) { router.push('/aluno'); return }
-      setRole(profile.role)
+
+      // Usa metadados do auth como fallback para o role
+      const roleEfetivo = profile?.role ?? (session.user.user_metadata?.role as string | undefined)
+      if (!['professor', 'administrador'].includes(roleEfetivo ?? '')) { router.push('/aluno'); return }
+      setRole(roleEfetivo ?? '')
       setNome(profile.nome ?? '')
       setEmail(profile.email ?? '')
       setInitials((profile.nome ?? '').split(' ').map((x: string) => x[0]).slice(0, 2).join(''))

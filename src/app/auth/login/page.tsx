@@ -55,13 +55,20 @@ export default function LoginPage() {
       return
     }
 
-    const { data: profileData } = await supabase
-      .from('profiles')
-      .select('role')
-      .eq('id', data.user.id)
-      .single()
+    // Tenta ler o role dos metadados do usuário (mais rápido e sem depender de RLS)
+    let role = data.user.user_metadata?.role as string | undefined
 
-    if (profileData?.role === 'professor' || profileData?.role === 'administrador') {
+    // Fallback: consulta o banco se os metadados não tiverem o role
+    if (!role) {
+      const { data: profileData } = await supabase
+        .from('profiles')
+        .select('role')
+        .eq('id', data.user.id)
+        .single()
+      role = profileData?.role
+    }
+
+    if (role === 'professor' || role === 'administrador') {
       window.location.href = '/professor'
     } else {
       window.location.href = '/aluno'
