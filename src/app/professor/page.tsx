@@ -194,7 +194,7 @@ export default function ProfessorPage() {
                       const [, mes, dia] = aluno.birth_date.split('-').map(Number)
                       const [, mesHoje, diaHoje] = hoje().split('-').map(Number)
                       if (mes === mesHoje && dia === diaHoje) {
-                        return <Cake size={14} className="text-pink-400 flex-shrink-0" title="Aniversário hoje!" />
+                        return <span title="Aniversário hoje!"><Cake size={14} className="text-pink-400 flex-shrink-0" /></span>
                       }
                       return null
                     })()}
