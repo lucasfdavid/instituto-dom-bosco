@@ -6,10 +6,12 @@ import { createClient } from '@/lib/supabase/client'
 import Link from 'next/link'
 import { Users, BarChart2, LogOut, BookOpen, Shield } from 'lucide-react'
 
-const navItems = [
+const navBase = [
   { href: '/professor', icon: Users, label: 'Meus alunos' },
   { href: '/professor/indicadores', icon: BarChart2, label: 'Indicadores' },
 ]
+
+const navAdmin = { href: '/professor/admin', icon: Shield, label: 'Admin' }
 
 export default function ProfessorLayout({ children }: { children: React.ReactNode }) {
   const router = useRouter()
@@ -29,11 +31,9 @@ export default function ProfessorLayout({ children }: { children: React.ReactNod
         .select('nome, email, role')
         .eq('id', session.user.id)
         .single()
-
-      // Usa metadados do auth como fallback para o role
-      const roleEfetivo = profile?.role ?? (session.user.user_metadata?.role as string | undefined)
-      if (!['professor', 'administrador'].includes(roleEfetivo ?? '')) { router.push('/aluno'); return }
-      setRole(roleEfetivo ?? '')
+      const roleEfetivo = profile?.role ?? (session.user.user_metadata?.role as string | undefined) ?? ''
+      if (!['professor', 'administrador'].includes(roleEfetivo)) { router.push('/aluno'); return }
+      setRole(roleEfetivo)
       setNome(profile?.nome ?? '')
       setEmail(profile?.email ?? '')
       setInitials((profile?.nome ?? '').split(' ').map((x: string) => x[0]).slice(0, 2).join(''))
@@ -46,6 +46,8 @@ export default function ProfessorLayout({ children }: { children: React.ReactNod
     await supabase.auth.signOut()
     router.push('/auth/login')
   }
+
+  const navItems = role === 'administrador' ? [...navBase, navAdmin] : navBase
 
   return (
     <div className="flex min-h-screen bg-gray-50 w-full overflow-x-hidden">
@@ -64,7 +66,7 @@ export default function ProfessorLayout({ children }: { children: React.ReactNod
         </div>
         <nav className="flex-1 px-3 py-4 flex flex-col gap-1">
           {navItems.map(({ href, icon: Icon, label }) => {
-            const active = pathname === href
+            const active = href === '/professor' ? pathname === href : pathname.startsWith(href)
             return (
               <Link key={href} href={href} className={`flex items-center gap-3 px-4 py-3 rounded-xl transition-all text-sm font-medium ${
                 active ? 'bg-white text-navy shadow-sm' : 'text-white/80 hover:bg-white/10'
@@ -74,12 +76,6 @@ export default function ProfessorLayout({ children }: { children: React.ReactNod
               </Link>
             )
           })}
-          {role === 'administrador' && (
-            <Link href="/admin" className="flex items-center gap-3 px-4 py-3 rounded-xl transition-all text-sm font-medium text-white/80 hover:bg-white/10 mt-2 border-t border-white/10 pt-3">
-              <Shield size={18} />
-              Administração
-            </Link>
-          )}
         </nav>
         <div className="px-4 py-4 border-t border-white/10">
           <div className="flex items-center gap-3 mb-3">
@@ -107,7 +103,7 @@ export default function ProfessorLayout({ children }: { children: React.ReactNod
       {/* BOTTOM NAV — mobile */}
       <nav className="md:hidden fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200 flex z-20 pb-safe">
         {navItems.map(({ href, icon: Icon, label }) => {
-          const active = pathname === href
+          const active = href === '/professor' ? pathname === href : pathname.startsWith(href)
           return (
             <Link key={href} href={href} className="flex-1 flex flex-col items-center gap-1 py-2.5">
               <Icon size={20} className={active ? 'text-teal' : 'text-gray-400'} />
@@ -117,12 +113,6 @@ export default function ProfessorLayout({ children }: { children: React.ReactNod
             </Link>
           )
         })}
-        {role === 'administrador' && (
-          <Link href="/admin" className="flex-1 flex flex-col items-center gap-1 py-2.5">
-            <Shield size={20} className="text-gray-400" />
-            <span className="font-condensed text-[9px] uppercase tracking-wide text-gray-400">Admin</span>
-          </Link>
-        )}
         <button onClick={handleLogout} className="flex-1 flex flex-col items-center gap-1 py-2.5">
           <LogOut size={20} className="text-gray-400" />
           <span className="font-condensed text-[9px] uppercase tracking-wide text-gray-400">Sair</span>
