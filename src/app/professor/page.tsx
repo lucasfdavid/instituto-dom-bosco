@@ -24,7 +24,7 @@ export default function ProfessorPage() {
         .select('role')
         .eq('id', session.user.id)
         .single()
-      if (profile?.role !== 'professor') { router.push('/aluno'); return }
+      if (!['professor', 'administrador'].includes(profile?.role ?? '')) { router.push('/aluno'); return }
 
       const { data: alunosPerfis } = await supabase
         .from('profiles')
