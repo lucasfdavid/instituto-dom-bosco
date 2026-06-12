@@ -77,6 +77,13 @@ export default function AlunoDetalhe({ params }: { params: { id: string } }) {
     await loadData()
   }
 
+  async function excluirConteudo(conteudoId: string) {
+    if (!confirm('Excluir este conteúdo e todas as suas revisões? Esta ação não pode ser desfeita.')) return
+    const supabase = createClient()
+    await supabase.from('conteudos').delete().eq('id', conteudoId)
+    await loadData()
+  }
+
   async function excluirRevisao(revisaoId: string) {
     if (!confirm('Excluir esta revisão? Esta ação não pode ser desfeita.')) return
     const supabase = createClient()
@@ -163,21 +170,30 @@ export default function AlunoDetalhe({ params }: { params: { id: string } }) {
           const aberto = expandido[c.id]
           return (
             <div key={c.id} className="bg-white rounded-2xl border border-gray-200 shadow-sm overflow-hidden">
-              <button
-                onClick={() => toggleExpandirConteudo(c.id, c.revisoes ?? [])}
-                className="w-full flex items-center justify-between p-4 hover:bg-gray-50 transition-colors"
-              >
-                <div className="flex items-center gap-3 text-left">
-                  <span className="font-condensed text-xs font-bold px-2.5 py-1 rounded-full bg-teal/10 text-teal uppercase">
-                    {c.materia}
-                  </span>
-                  <div>
-                    <p className="font-semibold text-navy text-sm">{c.assunto}</p>
-                    <p className="text-xs text-gray-400">{formatarDataCurta(c.data_estudo)}</p>
+              <div className="flex items-center">
+                <button
+                  onClick={() => toggleExpandirConteudo(c.id, c.revisoes ?? [])}
+                  className="flex-1 flex items-center justify-between p-4 hover:bg-gray-50 transition-colors text-left"
+                >
+                  <div className="flex items-center gap-3">
+                    <span className="font-condensed text-xs font-bold px-2.5 py-1 rounded-full bg-teal/10 text-teal uppercase">
+                      {c.materia}
+                    </span>
+                    <div>
+                      <p className="font-semibold text-navy text-sm">{c.assunto}</p>
+                      <p className="text-xs text-gray-400">{formatarDataCurta(c.data_estudo)}</p>
+                    </div>
                   </div>
-                </div>
-                {aberto ? <ChevronUp size={16} className="text-gray-400" /> : <ChevronDown size={16} className="text-gray-400" />}
-              </button>
+                  {aberto ? <ChevronUp size={16} className="text-gray-400" /> : <ChevronDown size={16} className="text-gray-400" />}
+                </button>
+                <button
+                  onClick={() => excluirConteudo(c.id)}
+                  className="p-4 text-gray-300 hover:text-red-500 hover:bg-red-50 transition-colors"
+                  title="Excluir conteúdo"
+                >
+                  <Trash2 size={15} />
+                </button>
+              </div>
 
               {aberto && (
                 <div className="border-t border-gray-100 p-4 flex flex-col gap-4">
